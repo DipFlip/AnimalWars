@@ -141,6 +141,13 @@ class Game {
                         unitDiv.classList.add('moved');
                     }
 
+                    // Add the unit icon emoji
+                    const iconDiv = document.createElement('div');
+                    iconDiv.className = 'unit-icon';
+                    iconDiv.textContent = this.getUnitIcon(unit.type);
+                    unitDiv.appendChild(iconDiv);
+
+                    // Add the soldier count
                     const countDiv = document.createElement('div');
                     countDiv.className = 'unit-count';
                     countDiv.textContent = unit.soldiers;
@@ -534,12 +541,9 @@ class Game {
                     const newY = unit.y + move.y;
 
                     if (this.isInBounds(newX, newY) && !this.getUnitAt(newX, newY)) {
-                        unit.x = newX;
-                        unit.y = newY;
-                        unit.hasMoved = true;
+                        await this.moveUnit(unit, newX, newY);
                         moved = true;
-                        this.render();
-                        await new Promise(resolve => setTimeout(resolve, 500));
+                        await new Promise(resolve => setTimeout(resolve, 300));
                         break;
                     }
                 }

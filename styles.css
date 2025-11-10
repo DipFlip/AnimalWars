@@ -97,20 +97,20 @@ h1 {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 2rem;
-    font-weight: bold;
     position: relative;
 }
 
+/* Colored circle background */
 .unit::before {
+    content: '';
     position: absolute;
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    z-index: -1;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    z-index: 1;
 }
 
 .unit.player::before {
@@ -132,6 +132,14 @@ h1 {
     z-index: 100;
 }
 
+/* Unit emoji icon */
+.unit-icon {
+    font-size: 2rem;
+    z-index: 2;
+    position: relative;
+}
+
+/* Unit count display */
 .unit-count {
     position: absolute;
     bottom: 2px;
@@ -141,19 +149,7 @@ h1 {
     color: white;
     padding: 2px 4px;
     border-radius: 3px;
-}
-
-/* Unit Type Icons */
-.unit-infantry::before {
-    content: '👤';
-}
-
-.unit-tank::before {
-    content: '🚜';
-}
-
-.unit-chopper::before {
-    content: '🚁';
+    z-index: 3;
 }
 
 /* Controls */
