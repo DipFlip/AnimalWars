@@ -498,13 +498,13 @@ class Game {
             attackerContainer.innerHTML = '';
             defenderContainer.innerHTML = '';
 
-            // Add team classes for colored backgrounds
-            attackerSide.className = `attacker-side team-${attacker.team}`;
-            defenderSide.className = `defender-side team-${defender.team}`;
+            // Add unit category classes (ground/air) for side backgrounds
+            attackerSide.className = `attacker-side ${this.getUnitCategory(attacker.type)}`;
+            defenderSide.className = `defender-side ${this.getUnitCategory(defender.type)}`;
 
-            // Add unit category classes (ground/air) for background colors
-            attackerContainer.className = `battle-unit-container ${this.getUnitCategory(attacker.type)}`;
-            defenderContainer.className = `battle-unit-container ${this.getUnitCategory(defender.type)}`;
+            // Add team classes for soldier container rectangles
+            attackerContainer.className = `battle-unit-container team-${attacker.team}`;
+            defenderContainer.className = `battle-unit-container team-${defender.team}`;
 
             // Calculate damage before showing cutscene
             const damage = this.calculateDamage(attacker, defender);
