@@ -259,20 +259,14 @@ class Game {
             }
         }
 
-        // Calculate attackable positions after moving
-        this.calculateAttackablePositions(unit);
+        // Only show attackable positions from current position before moving
+        this.calculateAttackablePositionsFromUnit(unit);
     }
 
     calculateAttackablePositions(unit) {
+        // This method is no longer used - keeping for backwards compatibility
         this.attackablePositions = [];
-
-        // Check from current position
         this.addAttackableFromPosition(unit, unit.x, unit.y);
-
-        // Check from all movable positions
-        for (const pos of this.movablePositions) {
-            this.addAttackableFromPosition(unit, pos.x, pos.y);
-        }
     }
 
     addAttackableFromPosition(unit, fromX, fromY) {
