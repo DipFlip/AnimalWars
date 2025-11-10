@@ -41,6 +41,10 @@ class Unit {
         return Math.ceil((this.health / this.maxHealth) * this.maxSoldiers);
     }
 
+    get displayNumber() {
+        return Math.ceil(this.health / 10);
+    }
+
     takeDamage(damage) {
         this.health -= damage;
         if (this.health < 0) this.health = 0;
@@ -147,10 +151,10 @@ class Game {
                     iconDiv.textContent = this.getUnitIcon(unit.type);
                     unitDiv.appendChild(iconDiv);
 
-                    // Add the soldier count
+                    // Add the unit number display
                     const countDiv = document.createElement('div');
                     countDiv.className = 'unit-count';
-                    countDiv.textContent = unit.soldiers;
+                    countDiv.textContent = unit.displayNumber;
                     unitDiv.appendChild(countDiv);
 
                     tile.appendChild(unitDiv);
