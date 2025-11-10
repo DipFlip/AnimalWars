@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advance Wars - Browser Game</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="game-container">
+        <header>
+            <h1>Advance Wars</h1>
+            <div id="turn-indicator">
+                <span id="current-turn">Player Turn</span>
+            </div>
+        </header>
+
+        <div id="game-board"></div>
+
+        <div id="controls">
+            <button id="end-turn-btn" class="control-btn">End Turn</button>
+            <button id="cancel-btn" class="control-btn" disabled>Cancel</button>
+        </div>
+
+        <div id="info-panel">
+            <div id="selected-unit-info">
+                <h3>Selected Unit</h3>
+                <div id="unit-details">
+                    <p>Click a unit to see details</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Battle Cutscene Overlay -->
+        <div id="battle-cutscene" class="hidden">
+            <div class="battle-scene">
+                <div class="attacker-side">
+                    <div id="attacker-unit" class="battle-unit"></div>
+                    <div class="attack-animation"></div>
+                </div>
+                <div class="defender-side">
+                    <div id="defender-unit" class="battle-unit"></div>
+                    <div class="defend-animation"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Over Screen -->
+        <div id="game-over" class="hidden">
+            <div class="game-over-content">
+                <h2 id="game-over-title"></h2>
+                <p id="game-over-message"></p>
+                <button id="restart-btn" class="control-btn">Restart Game</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
