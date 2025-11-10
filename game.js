@@ -290,9 +290,36 @@ class Game {
         }
     }
 
-    moveUnit(unit, x, y) {
-        unit.x = x;
-        unit.y = y;
+    async moveUnit(unit, toX, toY) {
+        // Get the unit's current tile element
+        const fromTile = document.querySelector(`[data-x="${unit.x}"][data-y="${unit.y}"]`);
+        const toTile = document.querySelector(`[data-x="${toX}"][data-y="${toY}"]`);
+
+        if (fromTile && toTile) {
+            const unitElement = fromTile.querySelector('.unit');
+            if (unitElement) {
+                // Calculate the offset
+                const fromRect = fromTile.getBoundingClientRect();
+                const toRect = toTile.getBoundingClientRect();
+                const deltaX = toRect.left - fromRect.left;
+                const deltaY = toRect.top - fromRect.top;
+
+                // Add moving class and apply transform
+                unitElement.classList.add('moving');
+                unitElement.style.transform = `translate(${deltaX}px, ${deltaY}px)`;
+
+                // Wait for animation to complete
+                await new Promise(resolve => setTimeout(resolve, 400));
+
+                // Reset transform
+                unitElement.style.transform = '';
+                unitElement.classList.remove('moving');
+            }
+        }
+
+        // Update unit position
+        unit.x = toX;
+        unit.y = toY;
         unit.hasMoved = true;
 
         this.movablePositions = [];
@@ -362,15 +389,52 @@ class Game {
         return Math.floor(damage);
     }
 
+    getUnitIcon(type) {
+        switch(type) {
+            case 'infantry': return '👤';
+            case 'tank': return '🚜';
+            case 'chopper': return '🚁';
+            default: return '❓';
+        }
+    }
+
     async showBattleCutscene(attacker, defender) {
         return new Promise((resolve) => {
             const cutscene = document.getElementById('battle-cutscene');
-            const attackerDiv = document.getElementById('attacker-unit');
-            const defenderDiv = document.getElementById('defender-unit');
+            const attackerContainer = document.getElementById('attacker-soldiers');
+            const defenderContainer = document.getElementById('defender-soldiers');
 
-            // Set unit icons
-            attackerDiv.className = `battle-unit unit-${attacker.type}`;
-            defenderDiv.className = `battle-unit unit-${defender.type}`;
+            // Clear previous soldiers
+            attackerContainer.innerHTML = '';
+            defenderContainer.innerHTML = '';
+
+            // Calculate damage before showing cutscene
+            const damage = this.calculateDamage(attacker, defender);
+            const defenderHealthBefore = defender.health;
+            const defenderHealthAfter = Math.max(0, defenderHealthBefore - damage);
+            const soldiersBefore = defender.soldiers;
+            const soldiersAfter = Math.ceil((defenderHealthAfter / defender.maxHealth) * defender.maxSoldiers);
+            const soldiersLost = soldiersBefore - soldiersAfter;
+
+            // Create attacker soldiers
+            const attackerIcon = this.getUnitIcon(attacker.type);
+            for (let i = 0; i < attacker.soldiers; i++) {
+                const soldier = document.createElement('div');
+                soldier.className = 'battle-soldier';
+                soldier.textContent = attackerIcon;
+                attackerContainer.appendChild(soldier);
+            }
+
+            // Create defender soldiers
+            const defenderIcon = this.getUnitIcon(defender.type);
+            const defenderSoldiers = [];
+            for (let i = 0; i < soldiersBefore; i++) {
+                const soldier = document.createElement('div');
+                soldier.className = 'battle-soldier';
+                soldier.textContent = defenderIcon;
+                defenderContainer.appendChild(soldier);
+                defenderSoldiers.push(soldier);
+            }
 
             cutscene.classList.remove('hidden');
 
@@ -384,15 +448,24 @@ class Game {
                     const defendAnim = cutscene.querySelector('.defend-animation');
                     defendAnim.classList.add('active');
 
-                    // Show soldier disappearing if unit will die
+                    // Animate soldiers disappearing
                     setTimeout(() => {
                         defendAnim.classList.remove('active');
 
-                        // Hide cutscene after animation
+                        // Make soldiers disappear with fire animation
+                        for (let i = 0; i < soldiersLost && i < defenderSoldiers.length; i++) {
+                            const soldierToRemove = defenderSoldiers[defenderSoldiers.length - 1 - i];
+                            setTimeout(() => {
+                                soldierToRemove.textContent = '🔥';
+                                soldierToRemove.classList.add('soldier-fire');
+                            }, i * 100);
+                        }
+
+                        // Hide cutscene after all animations
                         setTimeout(() => {
                             cutscene.classList.add('hidden');
                             resolve();
-                        }, 500);
+                        }, Math.max(800, soldiersLost * 100 + 500));
                     }, 500);
                 }, 500);
             }, 500);
