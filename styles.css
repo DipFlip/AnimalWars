@@ -45,7 +45,7 @@ h1 {
 
 #game-board {
     display: grid;
-    grid-template-columns: repeat(12, 50px);
+    grid-template-columns: repeat(10, 50px);
     grid-template-rows: repeat(10, 50px);
     gap: 2px;
     background: rgba(0, 0, 0, 0.3);
@@ -365,7 +365,7 @@ h1 {
 /* Responsive Design */
 @media (max-width: 768px) {
     #game-board {
-        grid-template-columns: repeat(12, 40px);
+        grid-template-columns: repeat(10, 40px);
         grid-template-rows: repeat(10, 40px);
     }
 

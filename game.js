@@ -31,7 +31,7 @@ class Unit {
                 this.health = 100;
                 this.maxSoldiers = 3;
                 this.movement = 6;
-                this.attackRange = 1;
+                this.attackRange = 4;
                 this.attackPower = 35;
                 break;
         }
@@ -59,7 +59,7 @@ class Unit {
 // Game State
 class Game {
     constructor() {
-        this.boardWidth = 12;
+        this.boardWidth = 10;
         this.boardHeight = 10;
         this.units = [];
         this.selectedUnit = null;
@@ -86,10 +86,10 @@ class Game {
         this.units.push(new Unit('chopper', 'player', 1, 9));
 
         // Create enemy units
-        this.units.push(new Unit('infantry', 'enemy', 10, 1));
-        this.units.push(new Unit('infantry', 'enemy', 9, 0));
-        this.units.push(new Unit('tank', 'enemy', 11, 1));
-        this.units.push(new Unit('chopper', 'enemy', 10, 0));
+        this.units.push(new Unit('infantry', 'enemy', 8, 1));
+        this.units.push(new Unit('infantry', 'enemy', 7, 0));
+        this.units.push(new Unit('tank', 'enemy', 9, 1));
+        this.units.push(new Unit('chopper', 'enemy', 8, 0));
 
         this.selectedUnit = null;
         this.movablePositions = [];
@@ -137,7 +137,7 @@ class Game {
                 if (unit) {
                     const unitDiv = document.createElement('div');
                     unitDiv.className = `unit unit-${unit.type} ${unit.team}`;
-                    if (unit.hasMoved && !unit.hasAttacked) {
+                    if (unit.hasMoved && unit.hasAttacked) {
                         unitDiv.classList.add('moved');
                     }
 
