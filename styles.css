@@ -132,6 +132,26 @@ h1 {
     z-index: 100;
 }
 
+.unit.unit-map-death {
+    animation: mapDeath 0.8s forwards;
+    z-index: 150;
+}
+
+@keyframes mapDeath {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    30% {
+        opacity: 1;
+        transform: scale(1.5) translateY(-5px);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(2) translateY(-20px);
+    }
+}
+
 /* Unit emoji icon */
 .unit-icon {
     font-size: 2rem;

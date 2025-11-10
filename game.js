@@ -359,10 +359,28 @@ class Game {
         const attackerDamage = this.calculateDamage(attacker, defender);
         defender.takeDamage(attackerDamage);
 
+        const defenderDied = !defender.isAlive();
+
         // Counter attack if defender is still alive
+        let attackerDied = false;
         if (defender.isAlive()) {
             const defenderDamage = this.calculateDamage(defender, attacker);
             attacker.takeDamage(defenderDamage);
+            attackerDied = !attacker.isAlive();
+        }
+
+        // Show death animations on map for defeated units
+        const deathAnimations = [];
+        if (defenderDied) {
+            deathAnimations.push(this.showMapDeathAnimation(defender.x, defender.y, defender.type));
+        }
+        if (attackerDied) {
+            deathAnimations.push(this.showMapDeathAnimation(attacker.x, attacker.y, attacker.type));
+        }
+
+        // Wait for death animations to complete
+        if (deathAnimations.length > 0) {
+            await Promise.all(deathAnimations);
         }
 
         // Remove dead units
@@ -375,6 +393,37 @@ class Game {
         this.cancelSelection();
         this.checkWinCondition();
         this.render();
+    }
+
+    async showMapDeathAnimation(x, y, type) {
+        return new Promise((resolve) => {
+            // Re-render to show current state
+            this.render();
+
+            // Find the tile and unit element
+            const tile = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
+            if (tile) {
+                const unitElement = tile.querySelector('.unit');
+                const iconElement = tile.querySelector('.unit-icon');
+
+                if (unitElement && iconElement) {
+                    // Change to fire emoji
+                    iconElement.textContent = '🔥';
+
+                    // Add death animation class
+                    unitElement.classList.add('unit-map-death');
+
+                    // Wait for animation to complete
+                    setTimeout(() => {
+                        resolve();
+                    }, 800);
+                } else {
+                    resolve();
+                }
+            } else {
+                resolve();
+            }
+        });
     }
 
     calculateDamage(attacker, defender) {
