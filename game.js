@@ -352,6 +352,9 @@ class Game {
     }
 
     async attack(attacker, defender) {
+        // Show pre-battle animation on map
+        await this.showPreBattleAnimation(attacker, defender);
+
         // Show battle cutscene
         await this.showBattleCutscene(attacker, defender);
 
@@ -393,6 +396,28 @@ class Game {
         this.cancelSelection();
         this.checkWinCondition();
         this.render();
+    }
+
+    async showPreBattleAnimation(attacker, defender) {
+        return new Promise((resolve) => {
+            // Find both unit tiles
+            const attackerTile = document.querySelector(`[data-x="${attacker.x}"][data-y="${attacker.y}"]`);
+            const defenderTile = document.querySelector(`[data-x="${defender.x}"][data-y="${defender.y}"]`);
+
+            const attackerElement = attackerTile?.querySelector('.unit');
+            const defenderElement = defenderTile?.querySelector('.unit');
+
+            // Add pre-battle animation class
+            if (attackerElement) attackerElement.classList.add('pre-battle');
+            if (defenderElement) defenderElement.classList.add('pre-battle');
+
+            // Wait 1 second, then remove animation
+            setTimeout(() => {
+                if (attackerElement) attackerElement.classList.remove('pre-battle');
+                if (defenderElement) defenderElement.classList.remove('pre-battle');
+                resolve();
+            }, 1000);
+        });
     }
 
     async showMapDeathAnimation(x, y, type) {

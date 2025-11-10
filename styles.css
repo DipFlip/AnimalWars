@@ -152,6 +152,20 @@ h1 {
     }
 }
 
+.unit.pre-battle {
+    animation: preBattle 0.3s ease-in-out infinite;
+    z-index: 120;
+}
+
+@keyframes preBattle {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
 /* Unit emoji icon */
 .unit-icon {
     font-size: 2rem;
