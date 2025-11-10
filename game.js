@@ -408,12 +408,18 @@ class Game {
     async showBattleCutscene(attacker, defender) {
         return new Promise((resolve) => {
             const cutscene = document.getElementById('battle-cutscene');
+            const attackerSide = cutscene.querySelector('.attacker-side');
+            const defenderSide = cutscene.querySelector('.defender-side');
             const attackerContainer = document.getElementById('attacker-soldiers');
             const defenderContainer = document.getElementById('defender-soldiers');
 
             // Clear previous soldiers
             attackerContainer.innerHTML = '';
             defenderContainer.innerHTML = '';
+
+            // Add team classes for colored backgrounds
+            attackerSide.className = `attacker-side team-${attacker.team}`;
+            defenderSide.className = `defender-side team-${defender.team}`;
 
             // Calculate damage before showing cutscene
             const damage = this.calculateDamage(attacker, defender);
