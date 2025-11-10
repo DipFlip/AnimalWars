@@ -63,7 +63,7 @@ class Unit {
 // Game State
 class Game {
     constructor() {
-        this.boardWidth = 10;
+        this.boardWidth = 8;
         this.boardHeight = 10;
         this.units = [];
         this.selectedUnit = null;
@@ -90,10 +90,10 @@ class Game {
         this.units.push(new Unit('chopper', 'player', 1, 9));
 
         // Create enemy units
-        this.units.push(new Unit('infantry', 'enemy', 8, 1));
-        this.units.push(new Unit('infantry', 'enemy', 7, 0));
-        this.units.push(new Unit('tank', 'enemy', 9, 1));
-        this.units.push(new Unit('chopper', 'enemy', 8, 0));
+        this.units.push(new Unit('infantry', 'enemy', 6, 1));
+        this.units.push(new Unit('infantry', 'enemy', 5, 0));
+        this.units.push(new Unit('tank', 'enemy', 7, 1));
+        this.units.push(new Unit('chopper', 'enemy', 6, 0));
 
         this.selectedUnit = null;
         this.movablePositions = [];
@@ -477,6 +477,15 @@ class Game {
         }
     }
 
+    getUnitCategory(type) {
+        switch(type) {
+            case 'infantry': return 'ground';
+            case 'tank': return 'ground';
+            case 'chopper': return 'air';
+            default: return 'ground';
+        }
+    }
+
     async showBattleCutscene(attacker, defender) {
         return new Promise((resolve) => {
             const cutscene = document.getElementById('battle-cutscene');
@@ -492,6 +501,10 @@ class Game {
             // Add team classes for colored backgrounds
             attackerSide.className = `attacker-side team-${attacker.team}`;
             defenderSide.className = `defender-side team-${defender.team}`;
+
+            // Add unit category classes (ground/air) for background colors
+            attackerContainer.className = `battle-unit-container ${this.getUnitCategory(attacker.type)}`;
+            defenderContainer.className = `battle-unit-container ${this.getUnitCategory(defender.type)}`;
 
             // Calculate damage before showing cutscene
             const damage = this.calculateDamage(attacker, defender);
