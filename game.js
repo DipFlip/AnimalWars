@@ -75,7 +75,17 @@ class Game {
 
         this.initGame();
         this.setupEventListeners();
+        this.initializeCutscene();
         this.render();
+    }
+
+    initializeCutscene() {
+        // Move battle cutscene into the game board
+        const battleCutscene = document.getElementById('battle-cutscene');
+        const gameBoard = document.getElementById('game-board');
+        if (battleCutscene && gameBoard) {
+            gameBoard.appendChild(battleCutscene);
+        }
     }
 
     initGame() {
@@ -116,6 +126,11 @@ class Game {
 
     render() {
         const board = document.getElementById('game-board');
+
+        // Save the battle cutscene if it exists
+        const battleCutscene = document.getElementById('battle-cutscene');
+        const cutsceneParent = battleCutscene ? battleCutscene.parentNode : null;
+
         board.innerHTML = '';
 
         // Create tiles
@@ -168,6 +183,11 @@ class Game {
                 tile.addEventListener('click', () => this.handleTileClick(x, y));
                 board.appendChild(tile);
             }
+        }
+
+        // Append battle cutscene back to board if it was there before
+        if (battleCutscene) {
+            board.appendChild(battleCutscene);
         }
 
         this.updateUI();
