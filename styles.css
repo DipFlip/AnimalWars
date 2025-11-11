@@ -268,6 +268,7 @@ h1 {
     font-style: normal;
     border: none;
     cursor: pointer;
+    background-color: transparent;
     background-image: url('art/button.png');
     background-size: 100% 100%;
     background-repeat: no-repeat;
