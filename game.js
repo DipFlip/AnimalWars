@@ -1265,6 +1265,9 @@ class Game {
         // Calculate capture amount based on unit health
         const captureAmount = Math.ceil(unit.health / 10);
 
+        // Render to ensure DOM is up to date before animation
+        this.render();
+
         // Show capture animation
         await this.showCaptureAnimation(unit, building, captureAmount);
 
