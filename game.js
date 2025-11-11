@@ -1,3 +1,8 @@
+// Multiplayer server configuration
+// Set this to your multiplayer server URL when deploying to production
+// Leave empty for local development (defaults to same origin)
+const MULTIPLAYER_SERVER_URL = 'https://animalwars-production.up.railway.app';
+
 // Unit Class
 class Unit {
     constructor(type, team, x, y) {
@@ -74,9 +79,17 @@ class Game {
         this.isMovingUnit = false;
         this.showingAttackRange = false;
 
+        // Multiplayer state
+        this.isMultiplayer = false;
+        this.myTeam = null;
+        this.socket = null;
+        this.gameId = null;
+        this.opponentId = null;
+
         this.initGame();
         this.setupEventListeners();
         this.initializeCutscene();
+        this.initializeSocket();
         this.render();
     }
 
@@ -122,6 +135,14 @@ class Game {
 
         document.getElementById('restart-btn').addEventListener('click', () => {
             this.restart();
+        });
+
+        document.getElementById('multiplayer-btn').addEventListener('click', () => {
+            this.startMultiplayer();
+        });
+
+        document.getElementById('cancel-matchmaking-btn').addEventListener('click', () => {
+            this.cancelMatchmaking();
         });
     }
 
@@ -201,7 +222,16 @@ class Game {
         cancelBtn.disabled = !this.selectedUnit;
 
         const endTurnBtn = document.getElementById('end-turn-btn');
-        if (this.currentTurn === 'player') {
+
+        // Determine if it's our turn
+        let isOurTurn;
+        if (this.isMultiplayer) {
+            isOurTurn = this.isMyTurn();
+        } else {
+            isOurTurn = this.currentTurn === 'player';
+        }
+
+        if (isOurTurn) {
             endTurnBtn.textContent = 'End Turn';
             endTurnBtn.disabled = false;
         } else {
@@ -225,7 +255,14 @@ class Game {
     }
 
     handleTileClick(x, y) {
-        if (this.gameOver || this.currentTurn !== 'player') return;
+        // Check if it's our turn
+        if (this.gameOver) return;
+
+        if (this.isMultiplayer) {
+            if (!this.isMyTurn()) return;
+        } else {
+            if (this.currentTurn !== 'player') return;
+        }
 
         const unit = this.getUnitAt(x, y);
 
@@ -266,7 +303,8 @@ class Game {
         }
 
         // If clicking on a unit
-        if (unit && unit.team === 'player') {
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+        if (unit && unit.team === myTeam) {
             this.selectUnit(unit);
         } else {
             this.cancelSelection();
@@ -371,8 +409,11 @@ class Game {
     }
 
     async moveUnit(unit, toX, toY) {
+        const fromX = unit.x;
+        const fromY = unit.y;
+
         // Get the unit's current tile element
-        const fromTile = document.querySelector(`[data-x="${unit.x}"][data-y="${unit.y}"]`);
+        const fromTile = document.querySelector(`[data-x="${fromX}"][data-y="${fromY}"]`);
         const toTile = document.querySelector(`[data-x="${toX}"][data-y="${toY}"]`);
 
         if (fromTile && toTile) {
@@ -401,6 +442,16 @@ class Game {
         unit.x = toX;
         unit.y = toY;
         unit.hasMoved = true;
+
+        // Emit move event in multiplayer mode
+        if (this.isMultiplayer && this.socket && unit.team === this.myTeam) {
+            this.socket.emit('playerMove', {
+                fromX: fromX,
+                fromY: fromY,
+                toX: toX,
+                toY: toY
+            });
+        }
 
         // Check if there are enemies in attack range
         const hasEnemiesInRange = this.hasEnemiesInAttackRange(unit);
@@ -465,6 +516,16 @@ class Game {
     }
 
     async attack(attacker, defender) {
+        // Emit attack event in multiplayer mode (before animation)
+        if (this.isMultiplayer && this.socket && attacker.team === this.myTeam) {
+            this.socket.emit('playerAttack', {
+                attackerX: attacker.x,
+                attackerY: attacker.y,
+                targetX: defender.x,
+                targetY: defender.y
+            });
+        }
+
         // Show pre-battle animation on map
         await this.showPreBattleAnimation(attacker, defender);
 
@@ -788,15 +849,29 @@ class Game {
     }
 
     endTurn() {
-        if (this.currentTurn === 'player') {
-            // Reset player units
-            this.units.filter(u => u.team === 'player').forEach(u => u.reset());
-            this.currentTurn = 'enemy';
-            this.cancelSelection();
-            this.render();
+        // In multiplayer, check if it's our turn
+        if (this.isMultiplayer && !this.isMyTurn()) {
+            return;
+        }
 
-            // AI turn
-            setTimeout(() => this.aiTurn(), 1000);
+        if (this.isMultiplayer) {
+            // In multiplayer, end our turn
+            this.units.filter(u => u.team === this.myTeam).forEach(u => u.reset());
+            this.cancelSelection();
+            this.socket.emit('endTurn');
+            this.render();
+        } else {
+            // Single player mode
+            if (this.currentTurn === 'player') {
+                // Reset player units
+                this.units.filter(u => u.team === 'player').forEach(u => u.reset());
+                this.currentTurn = 'enemy';
+                this.cancelSelection();
+                this.render();
+
+                // AI turn
+                setTimeout(() => this.aiTurn(), 1000);
+            }
         }
     }
 
@@ -898,11 +973,23 @@ class Game {
             message.textContent = 'All your units have been destroyed!';
         }
 
+        // Emit game over event in multiplayer mode
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('gameOver', { playerWon: playerWon });
+        }
+
         gameOverDiv.classList.remove('hidden');
     }
 
     restart() {
         document.getElementById('game-over').classList.add('hidden');
+
+        // Reset multiplayer state
+        this.isMultiplayer = false;
+        this.myTeam = null;
+        this.gameId = null;
+        this.opponentId = null;
+
         this.initGame();
         this.render();
     }
@@ -921,6 +1008,154 @@ class Game {
 
     isPositionAttackable(x, y) {
         return this.attackablePositions.some(p => p.x === x && p.y === y);
+    }
+
+    // Multiplayer methods
+    initializeSocket() {
+        // Check if Socket.IO is available
+        if (typeof io === 'undefined') {
+            console.log('Socket.IO not available - multiplayer disabled');
+            return;
+        }
+
+        try {
+            // Connect to multiplayer server (uses MULTIPLAYER_SERVER_URL or same origin)
+            const serverUrl = MULTIPLAYER_SERVER_URL || window.location.origin;
+            this.socket = io(serverUrl, {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 3,
+                reconnectionDelay: 1000
+            });
+
+            // Handle connection errors
+            this.socket.on('connect_error', (error) => {
+                console.log('Multiplayer server connection failed:', error.message);
+                console.log('Multiplayer mode requires a running server. See README for setup instructions.');
+                this.socket = null;
+            });
+
+            this.socket.on('connect', () => {
+                console.log('Connected to multiplayer server');
+            });
+        } catch (error) {
+            console.log('Failed to initialize multiplayer:', error);
+            this.socket = null;
+            return;
+        }
+
+        // Handle waiting for opponent
+        this.socket.on('waitingForOpponent', () => {
+            console.log('Waiting for opponent...');
+            this.showWaitingScreen();
+        });
+
+        // Handle game matched
+        this.socket.on('gameMatched', (data) => {
+            console.log('Game matched!', data);
+            this.hideWaitingScreen();
+            this.startMultiplayerGame(data);
+        });
+
+        // Handle opponent move
+        this.socket.on('opponentMove', (data) => {
+            console.log('Opponent moved', data);
+            this.handleOpponentMove(data);
+        });
+
+        // Handle opponent attack
+        this.socket.on('opponentAttack', (data) => {
+            console.log('Opponent attacked', data);
+            this.handleOpponentAttack(data);
+        });
+
+        // Handle turn change
+        this.socket.on('turnChanged', (newTurn) => {
+            console.log('Turn changed to:', newTurn);
+            this.currentTurn = newTurn;
+            this.updateUI();
+        });
+
+        // Handle opponent game over
+        this.socket.on('opponentGameOver', (data) => {
+            console.log('Opponent game over:', data);
+            // The opponent's game is over, so we won
+            this.showGameOver(!data.playerWon);
+        });
+
+        // Handle opponent disconnection
+        this.socket.on('opponentDisconnected', () => {
+            alert('Opponent disconnected! Returning to single player mode.');
+            this.restart();
+        });
+    }
+
+    startMultiplayer() {
+        if (!this.socket || !this.socket.connected) {
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
+            return;
+        }
+
+        console.log('Starting multiplayer...');
+        this.socket.emit('joinMatchmaking');
+    }
+
+    cancelMatchmaking() {
+        if (this.socket) {
+            this.socket.emit('cancelMatchmaking');
+        }
+        this.hideWaitingScreen();
+    }
+
+    startMultiplayerGame(data) {
+        this.isMultiplayer = true;
+        this.myTeam = data.yourTeam;
+        this.gameId = data.gameId;
+        this.opponentId = data.opponentId;
+
+        console.log(`Starting multiplayer game as ${this.myTeam} team`);
+
+        // Initialize game
+        this.initGame();
+        this.render();
+
+        // Set current turn - mouse team (player) always starts
+        this.currentTurn = 'player';
+
+        // If we're the enemy team, it's not our turn
+        if (this.myTeam === 'enemy') {
+            this.updateUI();
+        }
+    }
+
+    showWaitingScreen() {
+        document.getElementById('waiting-screen').classList.remove('hidden');
+    }
+
+    hideWaitingScreen() {
+        document.getElementById('waiting-screen').classList.add('hidden');
+    }
+
+    handleOpponentMove(data) {
+        const unit = this.getUnitAt(data.fromX, data.fromY);
+        if (unit) {
+            this.moveUnit(unit, data.toX, data.toY);
+        }
+    }
+
+    async handleOpponentAttack(data) {
+        const attacker = this.getUnitAt(data.attackerX, data.attackerY);
+        const target = this.getUnitAt(data.targetX, data.targetY);
+        if (attacker && target) {
+            await this.attack(attacker, target);
+        }
+    }
+
+    isMyTurn() {
+        if (!this.isMultiplayer) {
+            return this.currentTurn === 'player';
+        }
+        return this.currentTurn === this.myTeam;
     }
 }
 

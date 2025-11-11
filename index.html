@@ -20,6 +20,10 @@
             <button id="cancel-btn" class="control-btn" disabled>Cancel</button>
         </div>
 
+        <div id="multiplayer-controls">
+            <button id="multiplayer-btn" class="control-btn">Multiplayer</button>
+        </div>
+
         <div id="info-panel">
             <div id="selected-unit-info">
                 <h3>Selected Unit</h3>
@@ -41,6 +45,15 @@
             </div>
         </div>
 
+        <!-- Waiting for Opponent Screen -->
+        <div id="waiting-screen" class="hidden">
+            <div class="waiting-content">
+                <h2>Waiting for opponent...</h2>
+                <div class="spinner"></div>
+                <button id="cancel-matchmaking-btn" class="control-btn">Cancel</button>
+            </div>
+        </div>
+
         <!-- Game Over Screen -->
         <div id="game-over" class="hidden">
             <div class="game-over-content">
@@ -51,6 +64,7 @@
         </div>
     </div>
 
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="game.js"></script>
 </body>
 </html>
