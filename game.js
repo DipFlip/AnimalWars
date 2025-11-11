@@ -238,20 +238,6 @@ class Game {
             endTurnBtn.textContent = 'Enemy Turn';
             endTurnBtn.disabled = true;
         }
-
-        // Update selected unit info
-        const unitDetails = document.getElementById('unit-details');
-        if (this.selectedUnit) {
-            unitDetails.innerHTML = `
-                <p><strong>Type:</strong> ${this.selectedUnit.type}</p>
-                <p><strong>Team:</strong> ${this.selectedUnit.team}</p>
-                <p><strong>Health:</strong> ${this.selectedUnit.health}/100</p>
-                <p><strong>Soldiers:</strong> ${this.selectedUnit.soldiers}/${this.selectedUnit.maxSoldiers}</p>
-                <p><strong>Position:</strong> (${this.selectedUnit.x}, ${this.selectedUnit.y})</p>
-            `;
-        } else {
-            unitDetails.innerHTML = '<p>Click a unit to see details</p>';
-        }
     }
 
     handleTileClick(x, y) {

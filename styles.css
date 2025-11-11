@@ -241,7 +241,7 @@ h1 {
     display: flex;
     gap: 10px;
     justify-content: center;
-    margin-bottom: 20px;
+    flex-wrap: wrap;
     background: rgba(0, 0, 0, 0.3);
     padding: 15px;
     border-radius: 8px;
@@ -270,25 +270,6 @@ h1 {
     cursor: not-allowed;
 }
 
-/* Info Panel */
-#info-panel {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 15px;
-    border-radius: 8px;
-    text-align: center;
-}
-
-#selected-unit-info h3 {
-    margin-bottom: 10px;
-}
-
-#unit-details {
-    min-height: 120px;
-}
-
-#unit-details p {
-    margin: 5px 0;
-}
 
 /* Battle Cutscene */
 #battle-cutscene {
@@ -562,17 +543,6 @@ h1 {
     #game-container {
         max-width: 550px;
     }
-}
-
-/* Multiplayer Controls */
-#multiplayer-controls {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 10px;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 15px;
-    border-radius: 8px;
 }
 
 /* Waiting Screen */
