@@ -9,7 +9,7 @@ body {
     font-weight: 400;
     font-style: normal;
     background: #fcfbdc url('animal_wars_background.png') repeat;
-    background-size: 57.5%;
+    background-size: 400px;
     color: #fff;
     min-height: 100vh;
     display: flex;
@@ -389,14 +389,6 @@ h1 {
     cursor: not-allowed;
 }
 
-/* Multiplayer button in bottom right */
-.multiplayer-btn {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 500;
-}
-
 /* Battle Cutscene */
 #battle-cutscene {
     position: absolute;
@@ -613,6 +605,7 @@ h1 {
 @media (max-width: 768px) {
     body {
         padding: 5px;
+        background-size: 300px;
     }
 
     #game-container {
