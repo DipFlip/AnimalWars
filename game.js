@@ -129,10 +129,6 @@ class Game {
             this.endTurn();
         });
 
-        document.getElementById('cancel-btn').addEventListener('click', () => {
-            this.cancelSelection();
-        });
-
         document.getElementById('restart-btn').addEventListener('click', () => {
             this.restart();
         });
@@ -218,9 +214,6 @@ class Game {
     }
 
     updateUI() {
-        const cancelBtn = document.getElementById('cancel-btn');
-        cancelBtn.disabled = !this.selectedUnit;
-
         const endTurnBtn = document.getElementById('end-turn-btn');
 
         // Determine if it's our turn
@@ -237,20 +230,6 @@ class Game {
         } else {
             endTurnBtn.textContent = 'Enemy Turn';
             endTurnBtn.disabled = true;
-        }
-
-        // Update selected unit info
-        const unitDetails = document.getElementById('unit-details');
-        if (this.selectedUnit) {
-            unitDetails.innerHTML = `
-                <p><strong>Type:</strong> ${this.selectedUnit.type}</p>
-                <p><strong>Team:</strong> ${this.selectedUnit.team}</p>
-                <p><strong>Health:</strong> ${this.selectedUnit.health}/100</p>
-                <p><strong>Soldiers:</strong> ${this.selectedUnit.soldiers}/${this.selectedUnit.maxSoldiers}</p>
-                <p><strong>Position:</strong> (${this.selectedUnit.x}, ${this.selectedUnit.y})</p>
-            `;
-        } else {
-            unitDetails.innerHTML = '<p>Click a unit to see details</p>';
         }
     }
 
@@ -288,15 +267,15 @@ class Game {
                 this.cancelSelection();
                 return;
             }
-            // If not showing attack range yet, toggle to it
-            if (!unit.hasMoved) {
+            // If not showing attack range yet, toggle to it (only if not already attacked)
+            if (!unit.hasMoved && !unit.hasAttacked) {
                 this.showingAttackRange = true;
                 this.movablePositions = [];
                 this.calculateAttackablePositionsFromUnit(unit);
                 this.render();
                 return;
             } else {
-                // Unit has moved, unselect
+                // Unit has moved or attacked, unselect
                 this.cancelSelection();
                 return;
             }
@@ -314,11 +293,13 @@ class Game {
     selectUnit(unit) {
         this.selectedUnit = unit;
 
-        // If unit has already moved, show attack range directly
+        // If unit has already moved, show attack range directly (if not already attacked)
         if (unit.hasMoved) {
             this.showingAttackRange = true;
             this.movablePositions = [];
-            this.calculateAttackablePositionsFromUnit(unit);
+            if (!unit.hasAttacked) {
+                this.calculateAttackablePositionsFromUnit(unit);
+            }
         } else {
             // Show movement range first
             this.showingAttackRange = false;
@@ -453,10 +434,10 @@ class Game {
             });
         }
 
-        // Check if there are enemies in attack range
+        // Check if there are enemies in attack range and unit hasn't attacked yet
         const hasEnemiesInRange = this.hasEnemiesInAttackRange(unit);
 
-        if (hasEnemiesInRange) {
+        if (hasEnemiesInRange && !unit.hasAttacked) {
             // Keep unit selected and show attack range (only on enemies)
             this.selectedUnit = unit;
             this.showingAttackRange = true;
@@ -570,17 +551,13 @@ class Game {
         // Check win condition
         this.checkWinCondition();
 
-        // If attacker is still alive and hadn't moved before, let them move now
-        if (!attackerDied && !hadMovedBefore) {
-            this.selectedUnit = attacker;
-            this.showingAttackRange = false;
-            this.calculateMovablePositions(attacker);
-            this.render();
-        } else {
-            // Unit had already moved or died, end their turn
+        // After attacking, deselect the unit
+        // If they died or had already moved, mark them as done
+        // If they're alive and hadn't moved, they can still move if reselected
+        if (attackerDied || hadMovedBefore) {
             attacker.hasMoved = true;
-            this.cancelSelection();
         }
+        this.cancelSelection();
     }
 
     async showPreBattleAnimation(attacker, defender) {
