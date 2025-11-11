@@ -8,6 +8,7 @@ A browser-based turn-based strategy game inspired by Advance Wars.
 - Multiple unit types: Infantry, Tanks, and Choppers
 - Grid-based movement with range indicators
 - AI opponent that moves and attacks strategically
+- **Multiplayer support** - Play against other players online!
 - Battle cutscene animations
 - Health system with visual soldier counts
 - Win/lose conditions
@@ -60,7 +61,35 @@ Or simply connect your repository to Vercel dashboard for automatic deployments.
 
 ## Local Development
 
-Simply open `index.html` in a web browser to play locally.
+### Single Player Mode
+Simply open `index.html` in a web browser to play against the AI locally.
+
+### Multiplayer Mode
+To play multiplayer, you need to run the Node.js server:
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Start the server:
+   ```bash
+   npm start
+   ```
+
+3. Open your browser and navigate to `http://localhost:3000`
+
+4. Click the "Multiplayer" button at the bottom of the page
+
+5. Wait for another player to join (open another browser window/tab or share the URL with a friend)
+
+6. Once matched, you'll be randomly assigned to either the mouse team (blue) or bird team (red)
+
+7. The mouse team always goes first
+
+8. Play proceeds just like single player mode, but you take turns with your opponent
+
+**Note:** Multiplayer requires an active server connection. The game will fall back to single player mode if the server is not running.
 
 ## Future Enhancements
 
@@ -69,5 +98,6 @@ Simply open `index.html` in a web browser to play locally.
 - Multiple maps
 - Building capture mechanics
 - Production/economy system
-- Multiplayer support
 - Unit sprites/images
+- Ranked matchmaking
+- Game replay system
