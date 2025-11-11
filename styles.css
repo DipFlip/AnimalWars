@@ -250,6 +250,10 @@ h1 {
     margin-bottom: 10px;
 }
 
+#unit-details {
+    min-height: 120px;
+}
+
 #unit-details p {
     margin: 5px 0;
 }
