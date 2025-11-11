@@ -32,6 +32,13 @@ h1 {
     margin-bottom: 10px;
 }
 
+#game-logo {
+    max-width: 300px;
+    width: 100%;
+    height: auto;
+    margin-bottom: 10px;
+}
+
 #turn-indicator {
     background: rgba(255, 255, 255, 0.1);
     padding: 8px 16px;
@@ -481,6 +488,10 @@ h1 {
 
     h1 {
         font-size: 1.8rem;
+    }
+
+    #game-logo {
+        max-width: 250px;
     }
 
     #game-board {
