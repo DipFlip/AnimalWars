@@ -5,7 +5,9 @@
 }
 
 body {
-    font-family: 'Courier New', monospace;
+    font-family: "Jersey 10", sans-serif;
+    font-weight: 400;
+    font-style: normal;
     background: #fcfbdc url('animal_wars_background.png') repeat;
     background-size: 57.5%;
     color: #fff;
@@ -109,7 +111,7 @@ h1 {
 }
 
 .tile.movable {
-    background: rgba(255, 215, 0, 0.5);
+    background: rgba(251, 255, 237, 0.5);
     animation: pulse 1s infinite;
 }
 
@@ -237,6 +239,10 @@ h1 {
     bottom: 4%;
     right: 8%;
     font-size: clamp(0.5rem, 2vw, 0.8rem);
+    font-family: "Pixelify Sans", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
     background: rgba(0, 0, 0, 0.7);
     color: white;
     padding: 2px 4px;
@@ -247,29 +253,37 @@ h1 {
 /* Controls */
 #controls {
     display: flex;
+    flex-direction: column;
     gap: 10px;
     justify-content: center;
-    background: #fffca8;
-    padding: 15px;
-    border-radius: 8px;
+    align-items: center;
+    padding: 0;
 }
 
 .control-btn {
-    padding: 12px 24px;
-    font-size: 1rem;
-    font-weight: bold;
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    font-family: "Jersey 10", sans-serif;
+    font-weight: 400;
+    font-style: normal;
     border: none;
-    border-radius: 8px;
     cursor: pointer;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background-color: transparent;
+    background-image: url('art/button.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: #2c1810;
     transition: all 0.3s;
     text-transform: uppercase;
+    min-width: 200px;
+    min-height: 60px;
+    image-rendering: pixelated;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.3);
 }
 
 .control-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .control-btn:disabled {
@@ -277,6 +291,13 @@ h1 {
     cursor: not-allowed;
 }
 
+/* Multiplayer button in bottom right */
+.multiplayer-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 500;
+}
 
 /* Battle Cutscene */
 #battle-cutscene {
