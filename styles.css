@@ -821,7 +821,7 @@ h1 {
 }
 
 .production-option {
-    padding: 15px 20px 15px 30px;
+    padding: 15px 20px 15px 40px;
     font-size: 1.1rem;
     font-family: "Jersey 10", sans-serif;
     border: none;
@@ -873,6 +873,6 @@ h1 {
 }
 
 .option-cost {
-    color: #ffd700;
+    color: #2c1810;
     font-size: 0.95rem;
 }

@@ -143,23 +143,25 @@ class Game {
         this.enemyMoney = 1000;
 
         // Create player units
-        this.units.push(new Unit('infantry', 'player', 1, 8));
+        this.units.push(new Unit('infantry', 'player', 2, 8));
         this.units.push(new Unit('infantry', 'player', 2, 9));
         this.units.push(new Unit('tank', 'player', 0, 8));
         this.units.push(new Unit('chopper', 'player', 1, 9));
 
         // Create enemy units
-        this.units.push(new Unit('infantry', 'enemy', 6, 1));
+        this.units.push(new Unit('infantry', 'enemy', 5, 1));
         this.units.push(new Unit('infantry', 'enemy', 5, 0));
         this.units.push(new Unit('tank', 'enemy', 7, 1));
         this.units.push(new Unit('chopper', 'enemy', 6, 0));
 
         // Create buildings
-        // Player base (factory)
-        this.buildings.push(new Building('factory', 0, 9, 'player'));
+        // Player HQ and factory
+        this.buildings.push(new Building('hq', 0, 9, 'player'));
+        this.buildings.push(new Building('factory', 1, 8, 'player'));
 
-        // Enemy base (factory)
-        this.buildings.push(new Building('factory', 7, 0, 'enemy'));
+        // Enemy HQ and factory
+        this.buildings.push(new Building('hq', 7, 0, 'enemy'));
+        this.buildings.push(new Building('factory', 6, 1, 'enemy'));
 
         // Neutral cities in the middle
         this.buildings.push(new Building('city', 2, 3, 'neutral'));
@@ -1146,6 +1148,29 @@ class Game {
                     }
                 }
 
+                // After moving, check if infantry landed on capturable building
+                if (moved && unit.type === 'infantry') {
+                    const landedBuilding = this.getBuildingAt(unit.x, unit.y);
+                    if (landedBuilding && landedBuilding.owner !== 'enemy') {
+                        // Capture the building
+                        const captureAmount = Math.ceil(unit.health / 10);
+
+                        // Render before animation to ensure DOM is updated
+                        this.render();
+
+                        // Show capture animation
+                        await this.showCaptureAnimation(unit, landedBuilding, captureAmount);
+
+                        // Update building state
+                        landedBuilding.capturePoints -= captureAmount;
+                        if (landedBuilding.capturePoints <= 0) {
+                            landedBuilding.capturePoints = landedBuilding.maxCapturePoints;
+                            landedBuilding.owner = 'enemy';
+                        }
+                        this.render();
+                    }
+                }
+
                 // After moving, check if can attack now
                 if (moved) {
                     const newDistance = Math.abs(closestPlayer.x - unit.x) + Math.abs(closestPlayer.y - unit.y);
@@ -1170,14 +1195,19 @@ class Game {
         const playerUnits = this.units.filter(u => u.team === 'player');
         const enemyUnits = this.units.filter(u => u.team === 'enemy');
 
-        if (playerUnits.length === 0) {
-            this.showGameOver(false);
-        } else if (enemyUnits.length === 0) {
-            this.showGameOver(true);
+        // Check if HQ has been captured
+        const playerHQ = this.buildings.find(b => b.type === 'hq' && b.owner === 'player');
+        const enemyHQ = this.buildings.find(b => b.type === 'hq' && b.owner === 'enemy');
+
+        // Player loses if all units are destroyed OR HQ is captured
+        if (playerUnits.length === 0 || !playerHQ) {
+            this.showGameOver(false, !playerHQ);
+        } else if (enemyUnits.length === 0 || !enemyHQ) {
+            this.showGameOver(true, !enemyHQ);
         }
     }
 
-    showGameOver(playerWon) {
+    showGameOver(playerWon, hqCaptured = false) {
         this.gameOver = true;
         const gameOverDiv = document.getElementById('game-over');
         const title = document.getElementById('game-over-title');
@@ -1185,10 +1215,18 @@ class Game {
 
         if (playerWon) {
             title.textContent = 'Victory!';
-            message.textContent = 'You have defeated all enemy units!';
+            if (hqCaptured) {
+                message.textContent = 'You have captured the enemy headquarters!';
+            } else {
+                message.textContent = 'You have defeated all enemy units!';
+            }
         } else {
             title.textContent = 'Defeat!';
-            message.textContent = 'All your units have been destroyed!';
+            if (hqCaptured) {
+                message.textContent = 'Your headquarters has been captured!';
+            } else {
+                message.textContent = 'All your units have been destroyed!';
+            }
         }
 
         // Emit game over event in multiplayer mode
