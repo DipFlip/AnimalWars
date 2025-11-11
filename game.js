@@ -1,7 +1,7 @@
 // Multiplayer server configuration
 // Set this to your multiplayer server URL when deploying to production
 // Leave empty for local development (defaults to same origin)
-const MULTIPLAYER_SERVER_URL = '';
+const MULTIPLAYER_SERVER_URL = 'https://animalwars-production.up.railway.app';
 
 // Unit Class
 class Unit {
