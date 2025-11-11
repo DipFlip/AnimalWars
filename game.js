@@ -666,12 +666,12 @@ class Game {
             // Figure out which side takes which damage
             const playerSoldiersLost = attacker.team === 'player' ? attackerSoldiersLost : defenderSoldiersLost;
             const enemySoldiersLost = attacker.team === 'player' ? defenderSoldiersLost : attackerSoldiersLost;
-            const playerNumTargets = attacker.team === 'player' ? 0 : Math.ceil(attackerDamage / 3);
-            const enemyNumTargets = attacker.team === 'player' ? Math.ceil(attackerDamage / 3) : 0;
+            const playerNumTargets = attacker.team === 'player' ? 0 : Math.ceil(attackerDamage / 5);
+            const enemyNumTargets = attacker.team === 'player' ? Math.ceil(attackerDamage / 5) : 0;
             const playerCounterTargets = defenderWillSurvive && counterDamage > 0 ?
-                (attacker.team === 'player' ? Math.ceil(counterDamage / 3) : 0) : 0;
+                (attacker.team === 'player' ? Math.ceil(counterDamage / 5) : 0) : 0;
             const enemyCounterTargets = defenderWillSurvive && counterDamage > 0 ?
-                (attacker.team === 'enemy' ? Math.ceil(counterDamage / 3) : 0) : 0;
+                (attacker.team === 'enemy' ? Math.ceil(counterDamage / 5) : 0) : 0;
 
             // Create player soldiers
             const playerImagePath = this.getUnitImagePath(playerUnit.type, playerUnit.team);
