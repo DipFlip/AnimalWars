@@ -7,6 +7,7 @@
 body {
     font-family: 'Courier New', monospace;
     background: #fcfbdc url('animal_wars_background.png') repeat;
+    background-size: 50%;
     color: #fff;
     min-height: 100vh;
     display: flex;
