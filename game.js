@@ -610,27 +610,31 @@ class Game {
     async showBattleCutscene(attacker, defender) {
         return new Promise((resolve) => {
             const cutscene = document.getElementById('battle-cutscene');
-            const attackerSide = cutscene.querySelector('.attacker-side');
-            const defenderSide = cutscene.querySelector('.defender-side');
-            const attackerContainer = document.getElementById('attacker-soldiers');
-            const defenderContainer = document.getElementById('defender-soldiers');
+            const playerSide = cutscene.querySelector('.player-side');
+            const enemySide = cutscene.querySelector('.enemy-side');
+            const playerContainer = document.getElementById('player-soldiers');
+            const enemyContainer = document.getElementById('enemy-soldiers');
 
             // Clear previous soldiers
-            attackerContainer.innerHTML = '';
-            defenderContainer.innerHTML = '';
+            playerContainer.innerHTML = '';
+            enemyContainer.innerHTML = '';
+
+            // Determine which unit is player and which is enemy
+            const playerUnit = attacker.team === 'player' ? attacker : defender;
+            const enemyUnit = attacker.team === 'player' ? defender : attacker;
 
             // Add unit category classes (ground/air) for side backgrounds
-            attackerSide.className = `attacker-side ${this.getUnitCategory(attacker.type)}`;
-            defenderSide.className = `defender-side ${this.getUnitCategory(defender.type)}`;
+            playerSide.className = `player-side ${this.getUnitCategory(playerUnit.type)}`;
+            enemySide.className = `enemy-side ${this.getUnitCategory(enemyUnit.type)}`;
 
             // Add team classes for soldier container rectangles
-            attackerContainer.className = `battle-unit-container team-${attacker.team}`;
-            defenderContainer.className = `battle-unit-container team-${defender.team}`;
+            playerContainer.className = `battle-unit-container team-player`;
+            enemyContainer.className = `battle-unit-container team-enemy`;
 
-            // Calculate damage for initial attack
-            const damage = this.calculateDamage(attacker, defender);
+            // Calculate damage
+            const attackerDamage = this.calculateDamage(attacker, defender);
             const defenderHealthBefore = defender.health;
-            const defenderHealthAfter = Math.max(0, defenderHealthBefore - damage);
+            const defenderHealthAfter = Math.max(0, defenderHealthBefore - attackerDamage);
             const defenderSoldiersBefore = defender.soldiers;
             const defenderSoldiersAfter = Math.ceil((defenderHealthAfter / defender.maxHealth) * defender.maxSoldiers);
             const defenderSoldiersLost = defenderSoldiersBefore - defenderSoldiersAfter;
@@ -648,49 +652,58 @@ class Game {
                 attackerSoldiersLost = attackerSoldiersBefore - attackerSoldiersAfter;
             }
 
-            // Create attacker soldiers
-            const attackerImagePath = this.getUnitImagePath(attacker.type, attacker.team);
-            const attackerSoldiers = [];
-            for (let i = 0; i < attacker.soldiers; i++) {
+            // Figure out which side takes which damage
+            const playerSoldiersLost = attacker.team === 'player' ? attackerSoldiersLost : defenderSoldiersLost;
+            const enemySoldiersLost = attacker.team === 'player' ? defenderSoldiersLost : attackerSoldiersLost;
+            const playerNumTargets = attacker.team === 'player' ? 0 : Math.ceil(attackerDamage / 3);
+            const enemyNumTargets = attacker.team === 'player' ? Math.ceil(attackerDamage / 3) : 0;
+            const playerCounterTargets = defenderWillSurvive && counterDamage > 0 ?
+                (attacker.team === 'player' ? Math.ceil(counterDamage / 3) : 0) : 0;
+            const enemyCounterTargets = defenderWillSurvive && counterDamage > 0 ?
+                (attacker.team === 'enemy' ? Math.ceil(counterDamage / 3) : 0) : 0;
+
+            // Create player soldiers
+            const playerImagePath = this.getUnitImagePath(playerUnit.type, playerUnit.team);
+            const playerSoldiers = [];
+            for (let i = 0; i < playerUnit.soldiers; i++) {
                 const soldier = document.createElement('div');
                 soldier.className = 'battle-soldier';
                 const soldierImg = document.createElement('img');
-                soldierImg.src = attackerImagePath;
-                soldierImg.alt = `${attacker.team} ${attacker.type}`;
+                soldierImg.src = playerImagePath;
+                soldierImg.alt = `${playerUnit.team} ${playerUnit.type}`;
                 soldier.appendChild(soldierImg);
-                attackerContainer.appendChild(soldier);
-                attackerSoldiers.push(soldier);
+                playerContainer.appendChild(soldier);
+                playerSoldiers.push(soldier);
             }
 
-            // Create defender soldiers
-            const defenderImagePath = this.getUnitImagePath(defender.type, defender.team);
-            const defenderSoldiers = [];
-            for (let i = 0; i < defenderSoldiersBefore; i++) {
+            // Create enemy soldiers
+            const enemyImagePath = this.getUnitImagePath(enemyUnit.type, enemyUnit.team);
+            const enemySoldiers = [];
+            for (let i = 0; i < enemyUnit.soldiers; i++) {
                 const soldier = document.createElement('div');
                 soldier.className = 'battle-soldier';
                 const soldierImg = document.createElement('img');
-                soldierImg.src = defenderImagePath;
-                soldierImg.alt = `${defender.team} ${defender.type}`;
+                soldierImg.src = enemyImagePath;
+                soldierImg.alt = `${enemyUnit.team} ${enemyUnit.type}`;
                 soldier.appendChild(soldierImg);
-                defenderContainer.appendChild(soldier);
-                defenderSoldiers.push(soldier);
+                enemyContainer.appendChild(soldier);
+                enemySoldiers.push(soldier);
             }
 
             cutscene.classList.remove('hidden');
 
-            // PHASE 1: Attacker attacks defender
-            const numTargets = Math.ceil(damage / 3);
-
-            // Show target emojis scattering on defender
+            // SIMULTANEOUS: Show targets and fire on both sides at the same time
             setTimeout(() => {
-                // Create and scatter target emojis around defender container
-                for (let i = 0; i < numTargets; i++) {
+                // Show initial attack targets
+                const initialTargets = attacker.team === 'player' ? enemyNumTargets : playerNumTargets;
+                const targetContainer = attacker.team === 'player' ? enemyContainer : playerContainer;
+
+                for (let i = 0; i < initialTargets; i++) {
                     const target = document.createElement('div');
                     target.className = 'target-emoji';
                     target.textContent = '🎯';
 
-                    // Random scatter position
-                    const angle = (i / numTargets) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+                    const angle = (i / initialTargets) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
                     const distance = 30 + Math.random() * 40;
                     const scatterX = Math.cos(angle) * distance;
                     const scatterY = Math.sin(angle) * distance;
@@ -698,79 +711,67 @@ class Game {
                     target.style.setProperty('--scatter-x', `${scatterX}px`);
                     target.style.setProperty('--scatter-y', `${scatterY}px`);
 
-                    defenderContainer.appendChild(target);
+                    targetContainer.appendChild(target);
 
-                    // Stagger the animation
                     setTimeout(() => {
                         target.classList.add('scatter');
                     }, i * 100);
                 }
 
-                // After targets appear, make defender soldiers disappear with fire
+                // Show counter-attack targets simultaneously if applicable
+                if (defenderWillSurvive && counterDamage > 0) {
+                    const counterTargets = attacker.team === 'player' ? playerCounterTargets : enemyCounterTargets;
+                    const counterContainer = attacker.team === 'player' ? playerContainer : enemyContainer;
+
+                    for (let i = 0; i < counterTargets; i++) {
+                        const target = document.createElement('div');
+                        target.className = 'target-emoji';
+                        target.textContent = '🎯';
+
+                        const angle = (i / counterTargets) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+                        const distance = 30 + Math.random() * 40;
+                        const scatterX = Math.cos(angle) * distance;
+                        const scatterY = Math.sin(angle) * distance;
+
+                        target.style.setProperty('--scatter-x', `${scatterX}px`);
+                        target.style.setProperty('--scatter-y', `${scatterY}px`);
+
+                        counterContainer.appendChild(target);
+
+                        setTimeout(() => {
+                            target.classList.add('scatter');
+                        }, i * 100);
+                    }
+                }
+
+                // After targets appear, make soldiers disappear with fire on BOTH sides simultaneously
+                const maxTargets = Math.max(initialTargets, defenderWillSurvive ? (attacker.team === 'player' ? playerCounterTargets : enemyCounterTargets) : 0);
                 setTimeout(() => {
-                    for (let i = 0; i < defenderSoldiersLost && i < defenderSoldiers.length; i++) {
-                        const soldierToRemove = defenderSoldiers[defenderSoldiers.length - 1 - i];
+                    // Player side fire
+                    for (let i = 0; i < playerSoldiersLost && i < playerSoldiers.length; i++) {
+                        const soldierToRemove = playerSoldiers[playerSoldiers.length - 1 - i];
                         setTimeout(() => {
                             soldierToRemove.innerHTML = '🔥';
                             soldierToRemove.classList.add('soldier-fire');
                         }, i * 100);
                     }
 
-                    const phase1Duration = Math.max(800, defenderSoldiersLost * 100 + 500);
-
-                    // PHASE 2: Counter-attack if defender survived
-                    if (defenderWillSurvive && counterDamage > 0) {
+                    // Enemy side fire simultaneously
+                    for (let i = 0; i < enemySoldiersLost && i < enemySoldiers.length; i++) {
+                        const soldierToRemove = enemySoldiers[enemySoldiers.length - 1 - i];
                         setTimeout(() => {
-                            const numCounterTargets = Math.ceil(counterDamage / 3);
-
-                            // Show target emojis scattering on attacker
-                            for (let i = 0; i < numCounterTargets; i++) {
-                                const target = document.createElement('div');
-                                target.className = 'target-emoji';
-                                target.textContent = '🎯';
-
-                                // Random scatter position
-                                const angle = (i / numCounterTargets) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
-                                const distance = 30 + Math.random() * 40;
-                                const scatterX = Math.cos(angle) * distance;
-                                const scatterY = Math.sin(angle) * distance;
-
-                                target.style.setProperty('--scatter-x', `${scatterX}px`);
-                                target.style.setProperty('--scatter-y', `${scatterY}px`);
-
-                                attackerContainer.appendChild(target);
-
-                                // Stagger the animation
-                                setTimeout(() => {
-                                    target.classList.add('scatter');
-                                }, i * 100);
-                            }
-
-                            // After targets appear, make attacker soldiers disappear with fire
-                            setTimeout(() => {
-                                for (let i = 0; i < attackerSoldiersLost && i < attackerSoldiers.length; i++) {
-                                    const soldierToRemove = attackerSoldiers[attackerSoldiers.length - 1 - i];
-                                    setTimeout(() => {
-                                        soldierToRemove.innerHTML = '🔥';
-                                        soldierToRemove.classList.add('soldier-fire');
-                                    }, i * 100);
-                                }
-
-                                // Hide cutscene after counter-attack animations
-                                setTimeout(() => {
-                                    cutscene.classList.add('hidden');
-                                    resolve();
-                                }, Math.max(800, attackerSoldiersLost * 100 + 500));
-                            }, numCounterTargets * 100 + 400);
-                        }, phase1Duration);
-                    } else {
-                        // No counter-attack, hide cutscene after phase 1
-                        setTimeout(() => {
-                            cutscene.classList.add('hidden');
-                            resolve();
-                        }, phase1Duration);
+                            soldierToRemove.innerHTML = '🔥';
+                            soldierToRemove.classList.add('soldier-fire');
+                        }, i * 100);
                     }
-                }, numTargets * 100 + 400);
+
+                    // Hide cutscene after all animations complete
+                    const maxSoldiersLost = Math.max(playerSoldiersLost, enemySoldiersLost);
+                    setTimeout(() => {
+                        cutscene.classList.add('hidden');
+                        resolve();
+                    }, Math.max(800, maxSoldiersLost * 100 + 500));
+                }, maxTargets * 100 + 400);
             }, 500);
         });
     }
