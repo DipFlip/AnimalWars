@@ -274,15 +274,15 @@ class Game {
                 this.cancelSelection();
                 return;
             }
-            // If not showing attack range yet, toggle to it
-            if (!unit.hasMoved) {
+            // If not showing attack range yet, toggle to it (only if not already attacked)
+            if (!unit.hasMoved && !unit.hasAttacked) {
                 this.showingAttackRange = true;
                 this.movablePositions = [];
                 this.calculateAttackablePositionsFromUnit(unit);
                 this.render();
                 return;
             } else {
-                // Unit has moved, unselect
+                // Unit has moved or attacked, unselect
                 this.cancelSelection();
                 return;
             }
@@ -300,11 +300,13 @@ class Game {
     selectUnit(unit) {
         this.selectedUnit = unit;
 
-        // If unit has already moved, show attack range directly
+        // If unit has already moved, show attack range directly (if not already attacked)
         if (unit.hasMoved) {
             this.showingAttackRange = true;
             this.movablePositions = [];
-            this.calculateAttackablePositionsFromUnit(unit);
+            if (!unit.hasAttacked) {
+                this.calculateAttackablePositionsFromUnit(unit);
+            }
         } else {
             // Show movement range first
             this.showingAttackRange = false;
@@ -439,10 +441,10 @@ class Game {
             });
         }
 
-        // Check if there are enemies in attack range
+        // Check if there are enemies in attack range and unit hasn't attacked yet
         const hasEnemiesInRange = this.hasEnemiesInAttackRange(unit);
 
-        if (hasEnemiesInRange) {
+        if (hasEnemiesInRange && !unit.hasAttacked) {
             // Keep unit selected and show attack range (only on enemies)
             this.selectedUnit = unit;
             this.showingAttackRange = true;
