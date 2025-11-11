@@ -86,8 +86,8 @@ h1 {
     height: 100%;
     aspect-ratio: 1 / 1;
     background: transparent;
-    border-right: 1px solid rgba(0, 0, 0, 0.35);
-    border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+    border-right: 2px solid rgba(0, 0, 0, 0.20);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.20);
     cursor: pointer;
     position: relative;
     z-index: 1;
