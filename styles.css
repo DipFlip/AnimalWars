@@ -692,7 +692,19 @@ h1 {
 }
 
 /* Capture Popup */
-#capture-popup,
+#capture-popup {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1002;
+}
+
 #production-popup {
     position: fixed;
     top: 0;
@@ -711,7 +723,16 @@ h1 {
     display: none;
 }
 
-.popup-content {
+#capture-popup .popup-content {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 18px 22px;
+    border-radius: 12px;
+    text-align: center;
+    max-width: 260px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+#production-popup .popup-content {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     padding: 30px;
     border-radius: 16px;
@@ -720,13 +741,26 @@ h1 {
     min-width: 300px;
 }
 
-.popup-content h3 {
+#capture-popup .popup-content h3 {
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    color: #fff;
+}
+
+#capture-popup .popup-content p {
+    font-size: 0.85rem;
+    margin-bottom: 12px;
+    color: #fff;
+    line-height: 1.3;
+}
+
+#production-popup .popup-content h3 {
     font-size: 1.8rem;
     margin-bottom: 20px;
     color: #fff;
 }
 
-.popup-content p {
+#production-popup .popup-content p {
     font-size: 1.2rem;
     margin-bottom: 20px;
     color: #fff;
@@ -734,8 +768,15 @@ h1 {
 
 .popup-buttons {
     display: flex;
-    gap: 20px;
+    gap: 12px;
     justify-content: center;
+}
+
+.popup-buttons .control-btn {
+    min-width: 90px;
+    min-height: 45px;
+    padding: 10px 20px;
+    font-size: 0.95rem;
 }
 
 /* Production Menu */

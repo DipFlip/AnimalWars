@@ -555,6 +555,16 @@ class Game {
             });
         }
 
+        // Check if infantry landed on a capturable building
+        const building = this.getBuildingAt(toX, toY);
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+
+        if (unit.type === 'infantry' && building && building.owner !== myTeam && !unit.hasAttacked) {
+            // Show capture popup immediately
+            this.showCapturePopup(unit, building);
+            return;
+        }
+
         // Check if there are enemies in attack range and unit hasn't attacked yet
         const hasEnemiesInRange = this.hasEnemiesInAttackRange(unit);
 
