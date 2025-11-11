@@ -84,6 +84,22 @@ h1 {
     animation: pulse 1s infinite;
 }
 
+.tile.attack-target::after {
+    content: '🎯';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(1.5rem, 5vw, 2.5rem);
+    z-index: 10;
+    animation: targetPulse 1s infinite;
+}
+
+@keyframes targetPulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); }
+    50% { transform: translate(-50%, -50%) scale(1.2); }
+}
+
 .tile.selected {
     border: 3px solid #fff;
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
