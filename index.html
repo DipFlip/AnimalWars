@@ -18,6 +18,12 @@
 
         <div id="game-board"></div>
 
+        <div id="money-display">
+            <div class="money-info">
+                <span>💰 Money: </span><span id="player-money">1000</span>
+            </div>
+        </div>
+
         <div id="controls">
             <button id="end-turn-btn" class="control-btn">End Turn</button>
         </div>
@@ -49,6 +55,47 @@
                 <h2 id="game-over-title"></h2>
                 <p id="game-over-message"></p>
                 <button id="restart-btn" class="control-btn">Restart Game</button>
+            </div>
+        </div>
+
+        <!-- Capture Confirmation Popup -->
+        <div id="capture-popup" class="hidden">
+            <div class="popup-content">
+                <h3>Capture Building?</h3>
+                <p id="capture-info"></p>
+                <div class="popup-buttons">
+                    <button id="capture-yes-btn" class="control-btn">Yes</button>
+                    <button id="capture-no-btn" class="control-btn">No</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Menu Popup -->
+        <div id="production-popup" class="hidden">
+            <div class="popup-content">
+                <h3>Produce Unit</h3>
+                <p class="money-info">💰 Money: <span id="production-money">0</span></p>
+                <div id="production-options">
+                    <button class="production-option" data-unit="infantry">
+                        <div class="option-info">
+                            <span class="option-name">Infantry</span>
+                            <span class="option-cost">💰 300</span>
+                        </div>
+                    </button>
+                    <button class="production-option" data-unit="tank">
+                        <div class="option-info">
+                            <span class="option-name">Tank</span>
+                            <span class="option-cost">💰 500</span>
+                        </div>
+                    </button>
+                    <button class="production-option" data-unit="chopper">
+                        <div class="option-info">
+                            <span class="option-name">Chopper</span>
+                            <span class="option-cost">💰 700</span>
+                        </div>
+                    </button>
+                </div>
+                <button id="production-cancel-btn" class="control-btn">Cancel</button>
             </div>
         </div>
     </div>

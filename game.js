@@ -65,19 +65,51 @@ class Unit {
     }
 }
 
+// Building Class
+class Building {
+    constructor(type, x, y, owner = 'neutral') {
+        this.type = type; // 'city', 'factory', 'hq'
+        this.x = x;
+        this.y = y;
+        this.owner = owner; // 'neutral', 'player', 'enemy'
+        this.maxCapturePoints = 20;
+        this.capturePoints = 20; // When this reaches 0, building is captured
+    }
+
+    canProduce() {
+        return this.type === 'factory' || this.type === 'hq';
+    }
+
+    getIncome() {
+        // Buildings provide income when owned
+        return this.type === 'hq' ? 200 : 100;
+    }
+}
+
 // Game State
 class Game {
     constructor() {
         this.boardWidth = 8;
         this.boardHeight = 10;
         this.units = [];
+        this.buildings = [];
         this.selectedUnit = null;
+        this.selectedBuilding = null;
         this.currentTurn = 'player';
         this.gameOver = false;
         this.movablePositions = [];
         this.attackablePositions = [];
         this.isMovingUnit = false;
         this.showingAttackRange = false;
+
+        // Economy state
+        this.playerMoney = 1000;
+        this.enemyMoney = 1000;
+        this.incomePerTurn = 300; // Base income per turn
+
+        // UI state for buildings
+        this.capturePopupVisible = false;
+        this.productionMenuVisible = false;
 
         // Multiplayer state
         this.isMultiplayer = false;
@@ -104,8 +136,11 @@ class Game {
 
     initGame() {
         this.units = [];
+        this.buildings = [];
         this.gameOver = false;
         this.currentTurn = 'player';
+        this.playerMoney = 1000;
+        this.enemyMoney = 1000;
 
         // Create player units
         this.units.push(new Unit('infantry', 'player', 1, 8));
@@ -119,9 +154,27 @@ class Game {
         this.units.push(new Unit('tank', 'enemy', 7, 1));
         this.units.push(new Unit('chopper', 'enemy', 6, 0));
 
+        // Create buildings
+        // Player base (factory)
+        this.buildings.push(new Building('factory', 0, 9, 'player'));
+
+        // Enemy base (factory)
+        this.buildings.push(new Building('factory', 7, 0, 'enemy'));
+
+        // Neutral cities in the middle
+        this.buildings.push(new Building('city', 2, 3, 'neutral'));
+        this.buildings.push(new Building('city', 5, 3, 'neutral'));
+        this.buildings.push(new Building('city', 3, 5, 'neutral'));
+        this.buildings.push(new Building('city', 4, 5, 'neutral'));
+        this.buildings.push(new Building('city', 2, 7, 'neutral'));
+        this.buildings.push(new Building('city', 5, 7, 'neutral'));
+
         this.selectedUnit = null;
+        this.selectedBuilding = null;
         this.movablePositions = [];
         this.attackablePositions = [];
+        this.capturePopupVisible = false;
+        this.productionMenuVisible = false;
     }
 
     setupEventListeners() {
@@ -139,6 +192,28 @@ class Game {
 
         document.getElementById('cancel-matchmaking-btn').addEventListener('click', () => {
             this.cancelMatchmaking();
+        });
+
+        // Capture popup buttons
+        document.getElementById('capture-yes-btn').addEventListener('click', () => {
+            this.confirmCapture();
+        });
+
+        document.getElementById('capture-no-btn').addEventListener('click', () => {
+            this.cancelCapture();
+        });
+
+        // Production popup buttons
+        document.getElementById('production-cancel-btn').addEventListener('click', () => {
+            this.closeProductionMenu();
+        });
+
+        // Production options
+        document.querySelectorAll('.production-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const unitType = btn.dataset.unit;
+                this.produceUnit(unitType);
+            });
         });
     }
 
@@ -168,6 +243,30 @@ class Game {
                 // Show targets both in attack mode and during movement selection
                 if (this.isPositionAttackable(x, y)) {
                     tile.classList.add('attack-target');
+                }
+
+                // Check if there's a building here
+                const building = this.getBuildingAt(x, y);
+                if (building) {
+                    const buildingDiv = document.createElement('div');
+                    buildingDiv.className = `building building-${building.type} owner-${building.owner}`;
+
+                    // Add building icon
+                    const buildingIcon = document.createElement('div');
+                    buildingIcon.className = 'building-icon';
+                    buildingIcon.textContent = this.getBuildingIcon(building.type);
+                    buildingDiv.appendChild(buildingIcon);
+
+                    // Show capture progress if being captured
+                    if (building.capturePoints < building.maxCapturePoints) {
+                        const captureBar = document.createElement('div');
+                        captureBar.className = 'capture-progress';
+                        const capturePercent = (building.capturePoints / building.maxCapturePoints) * 100;
+                        captureBar.style.width = `${capturePercent}%`;
+                        buildingDiv.appendChild(captureBar);
+                    }
+
+                    tile.appendChild(buildingDiv);
                 }
 
                 // Check if there's a unit here
@@ -231,6 +330,11 @@ class Game {
             endTurnBtn.textContent = 'Enemy Turn';
             endTurnBtn.disabled = true;
         }
+
+        // Update money display
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+        const myMoney = myTeam === 'player' ? this.playerMoney : this.enemyMoney;
+        document.getElementById('player-money').textContent = myMoney;
     }
 
     handleTileClick(x, y) {
@@ -244,6 +348,7 @@ class Game {
         }
 
         const unit = this.getUnitAt(x, y);
+        const building = this.getBuildingAt(x, y);
 
         // If clicking on an attackable position
         if (this.isPositionAttackable(x, y)) {
@@ -281,9 +386,25 @@ class Game {
             }
         }
 
-        // If clicking on a unit
         const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+
+        // Check if clicking on owned factory/building to produce units
+        if (building && !unit) {
+            if (building.owner === myTeam && building.canProduce()) {
+                this.showProductionMenu(building);
+                return;
+            }
+        }
+
+        // Check if clicking on a unit
         if (unit && unit.team === myTeam) {
+            // Check if unit is infantry on a capturable building
+            if (unit.type === 'infantry' && building && !unit.hasMoved && !unit.hasAttacked) {
+                if (building.owner !== myTeam) {
+                    this.showCapturePopup(unit, building);
+                    return;
+                }
+            }
             this.selectUnit(unit);
         } else {
             this.cancelSelection();
@@ -641,6 +762,15 @@ class Game {
         }
     }
 
+    getBuildingIcon(type) {
+        switch(type) {
+            case 'city': return '🏘️';
+            case 'factory': return '🏭';
+            case 'hq': return '🏛️';
+            default: return '🏢';
+        }
+    }
+
     getUnitImagePath(type, team) {
         const teamPrefix = team === 'player' ? 'mouse' : 'bird';
         const unitName = type === 'infantry' ? 'soldier' : type;
@@ -833,7 +963,17 @@ class Game {
 
         if (this.isMultiplayer) {
             // In multiplayer, end our turn
-            this.units.filter(u => u.team === this.myTeam).forEach(u => u.reset());
+            const myTeam = this.myTeam;
+            this.units.filter(u => u.team === myTeam).forEach(u => u.reset());
+
+            // Add income for my team
+            const income = this.calculateIncome(myTeam);
+            if (myTeam === 'player') {
+                this.playerMoney += income;
+            } else {
+                this.enemyMoney += income;
+            }
+
             this.cancelSelection();
             this.socket.emit('endTurn');
             this.render();
@@ -842,6 +982,10 @@ class Game {
             if (this.currentTurn === 'player') {
                 // Reset player units
                 this.units.filter(u => u.team === 'player').forEach(u => u.reset());
+
+                // Add income for player
+                this.playerMoney += this.calculateIncome('player');
+
                 this.currentTurn = 'enemy';
                 this.cancelSelection();
                 this.render();
@@ -853,10 +997,44 @@ class Game {
     }
 
     async aiTurn() {
+        // Try to produce units from owned factories
+        const enemyFactories = this.buildings.filter(b => b.owner === 'enemy' && b.canProduce());
+        for (const factory of enemyFactories) {
+            if (this.enemyMoney >= 300 && !this.getUnitAt(factory.x, factory.y)) {
+                // Produce infantry if we have money
+                const newUnit = new Unit('infantry', 'enemy', factory.x, factory.y);
+                newUnit.hasMoved = true;
+                newUnit.hasAttacked = true;
+                this.units.push(newUnit);
+                this.enemyMoney -= 300;
+                await new Promise(resolve => setTimeout(resolve, 300));
+                this.render();
+            }
+        }
+
         const enemyUnits = this.units.filter(u => u.team === 'enemy' && !u.hasMoved);
 
         for (const unit of enemyUnits) {
             if (this.gameOver) break;
+
+            // Check if infantry is on a capturable building
+            if (unit.type === 'infantry') {
+                const building = this.getBuildingAt(unit.x, unit.y);
+                if (building && building.owner !== 'enemy') {
+                    // Capture the building
+                    const captureAmount = Math.ceil(unit.health / 10);
+                    building.capturePoints -= captureAmount;
+                    if (building.capturePoints <= 0) {
+                        building.capturePoints = building.maxCapturePoints;
+                        building.owner = 'enemy';
+                    }
+                    unit.hasMoved = true;
+                    unit.hasAttacked = true;
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                    this.render();
+                    continue;
+                }
+            }
 
             // Find closest player unit
             const playerUnits = this.units.filter(u => u.team === 'player');
@@ -880,10 +1058,41 @@ class Game {
                 await this.attack(unit, closestPlayer);
                 await new Promise(resolve => setTimeout(resolve, 500));
             } else {
-                // Move towards player
+                // For infantry, prioritize moving to neutral buildings
+                let targetX, targetY;
+                if (unit.type === 'infantry') {
+                    const neutralBuildings = this.buildings.filter(b => b.owner === 'neutral');
+                    if (neutralBuildings.length > 0) {
+                        // Find closest neutral building
+                        let closestBuilding = null;
+                        let minBuildingDistance = Infinity;
+                        for (const building of neutralBuildings) {
+                            const dist = Math.abs(building.x - unit.x) + Math.abs(building.y - unit.y);
+                            if (dist < minBuildingDistance) {
+                                minBuildingDistance = dist;
+                                closestBuilding = building;
+                            }
+                        }
+                        if (closestBuilding && minBuildingDistance < minDistance) {
+                            targetX = closestBuilding.x;
+                            targetY = closestBuilding.y;
+                        } else {
+                            targetX = closestPlayer.x;
+                            targetY = closestPlayer.y;
+                        }
+                    } else {
+                        targetX = closestPlayer.x;
+                        targetY = closestPlayer.y;
+                    }
+                } else {
+                    targetX = closestPlayer.x;
+                    targetY = closestPlayer.y;
+                }
+
+                // Move towards target
                 const direction = {
-                    x: Math.sign(closestPlayer.x - unit.x),
-                    y: Math.sign(closestPlayer.y - unit.y)
+                    x: Math.sign(targetX - unit.x),
+                    y: Math.sign(targetY - unit.y)
                 };
 
                 // Try to move in the best direction
@@ -918,6 +1127,9 @@ class Game {
                 }
             }
         }
+
+        // Add income for enemy
+        this.enemyMoney += this.calculateIncome('enemy');
 
         // End AI turn
         this.units.filter(u => u.team === 'enemy').forEach(u => u.reset());
@@ -960,6 +1172,8 @@ class Game {
 
     restart() {
         document.getElementById('game-over').classList.add('hidden');
+        document.getElementById('capture-popup').classList.add('hidden');
+        document.getElementById('production-popup').classList.add('hidden');
 
         // Reset multiplayer state
         this.isMultiplayer = false;
@@ -979,12 +1193,160 @@ class Game {
         return this.units.find(u => u.x === x && u.y === y);
     }
 
+    getBuildingAt(x, y) {
+        return this.buildings.find(b => b.x === x && b.y === y);
+    }
+
     isPositionMovable(x, y) {
         return this.movablePositions.some(p => p.x === x && p.y === y);
     }
 
     isPositionAttackable(x, y) {
         return this.attackablePositions.some(p => p.x === x && p.y === y);
+    }
+
+    // Building methods
+    showCapturePopup(unit, building) {
+        this.selectedUnit = unit;
+        this.selectedBuilding = building;
+        this.capturePopupVisible = true;
+
+        const popup = document.getElementById('capture-popup');
+        const info = document.getElementById('capture-info');
+
+        const captureAmount = Math.ceil(unit.health / 10);
+        info.textContent = `This will capture ${captureAmount} points from the building (${building.capturePoints}/${building.maxCapturePoints} remaining).`;
+
+        popup.classList.remove('hidden');
+    }
+
+    cancelCapture() {
+        document.getElementById('capture-popup').classList.add('hidden');
+        this.capturePopupVisible = false;
+        this.selectedBuilding = null;
+    }
+
+    confirmCapture() {
+        if (!this.selectedUnit || !this.selectedBuilding) return;
+
+        const unit = this.selectedUnit;
+        const building = this.selectedBuilding;
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+
+        // Calculate capture amount based on unit health
+        const captureAmount = Math.ceil(unit.health / 10);
+
+        // Reduce building capture points
+        building.capturePoints -= captureAmount;
+
+        if (building.capturePoints <= 0) {
+            // Building is captured!
+            building.capturePoints = building.maxCapturePoints;
+            building.owner = myTeam;
+        }
+
+        // Mark unit as used
+        unit.hasMoved = true;
+        unit.hasAttacked = true;
+
+        // Emit capture event in multiplayer
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('captureBuilding', {
+                unitX: unit.x,
+                unitY: unit.y,
+                buildingX: building.x,
+                buildingY: building.y,
+                captureAmount: captureAmount
+            });
+        }
+
+        this.cancelCapture();
+        this.cancelSelection();
+        this.render();
+    }
+
+    showProductionMenu(building) {
+        this.selectedBuilding = building;
+        this.productionMenuVisible = true;
+
+        const popup = document.getElementById('production-popup');
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+        const myMoney = myTeam === 'player' ? this.playerMoney : this.enemyMoney;
+
+        document.getElementById('production-money').textContent = myMoney;
+
+        // Enable/disable buttons based on money
+        const unitCosts = { infantry: 300, tank: 500, chopper: 700 };
+        document.querySelectorAll('.production-option').forEach(btn => {
+            const unitType = btn.dataset.unit;
+            const cost = unitCosts[unitType];
+            btn.disabled = (myMoney < cost);
+        });
+
+        popup.classList.remove('hidden');
+    }
+
+    closeProductionMenu() {
+        document.getElementById('production-popup').classList.add('hidden');
+        this.productionMenuVisible = false;
+        this.selectedBuilding = null;
+    }
+
+    produceUnit(unitType) {
+        if (!this.selectedBuilding) return;
+
+        const building = this.selectedBuilding;
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+        const unitCosts = { infantry: 300, tank: 500, chopper: 700 };
+        const cost = unitCosts[unitType];
+
+        // Check if we have enough money
+        const myMoney = myTeam === 'player' ? this.playerMoney : this.enemyMoney;
+        if (myMoney < cost) {
+            return;
+        }
+
+        // Check if tile is occupied
+        if (this.getUnitAt(building.x, building.y)) {
+            alert('Cannot produce unit - tile is occupied!');
+            return;
+        }
+
+        // Deduct money
+        if (myTeam === 'player') {
+            this.playerMoney -= cost;
+        } else {
+            this.enemyMoney -= cost;
+        }
+
+        // Create new unit with actions already used
+        const newUnit = new Unit(unitType, myTeam, building.x, building.y);
+        newUnit.hasMoved = true;
+        newUnit.hasAttacked = true;
+        this.units.push(newUnit);
+
+        // Emit production event in multiplayer
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('produceUnit', {
+                buildingX: building.x,
+                buildingY: building.y,
+                unitType: unitType
+            });
+        }
+
+        this.closeProductionMenu();
+        this.render();
+    }
+
+    calculateIncome(team) {
+        let income = this.incomePerTurn;
+        // Add income from owned buildings
+        this.buildings.forEach(building => {
+            if (building.owner === team) {
+                income += building.getIncome();
+            }
+        });
+        return income;
     }
 
     // Multiplayer methods
