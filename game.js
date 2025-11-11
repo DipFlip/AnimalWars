@@ -1223,11 +1223,6 @@ class Game {
         this.capturePopupVisible = true;
 
         const popup = document.getElementById('capture-popup');
-        const info = document.getElementById('capture-info');
-
-        const captureAmount = Math.ceil(unit.health / 10);
-        info.textContent = `This will capture ${captureAmount} points from the building (${building.capturePoints}/${building.maxCapturePoints} remaining).`;
-
         popup.classList.remove('hidden');
     }
 
@@ -1256,15 +1251,22 @@ class Game {
         }
     }
 
-    confirmCapture() {
+    async confirmCapture() {
         if (!this.selectedUnit || !this.selectedBuilding) return;
 
         const unit = this.selectedUnit;
         const building = this.selectedBuilding;
         const myTeam = this.isMultiplayer ? this.myTeam : 'player';
 
+        // Close popup first
+        document.getElementById('capture-popup').classList.add('hidden');
+        this.capturePopupVisible = false;
+
         // Calculate capture amount based on unit health
         const captureAmount = Math.ceil(unit.health / 10);
+
+        // Show capture animation
+        await this.showCaptureAnimation(unit, building, captureAmount);
 
         // Reduce building capture points
         building.capturePoints -= captureAmount;
@@ -1290,11 +1292,49 @@ class Game {
             });
         }
 
-        document.getElementById('capture-popup').classList.add('hidden');
-        this.capturePopupVisible = false;
         this.selectedBuilding = null;
         this.cancelSelection();
         this.render();
+    }
+
+    async showCaptureAnimation(unit, building, captureAmount) {
+        return new Promise((resolve) => {
+            // Find the unit tile
+            const tile = document.querySelector(`[data-x="${unit.x}"][data-y="${unit.y}"]`);
+            if (!tile) {
+                resolve();
+                return;
+            }
+
+            const unitElement = tile.querySelector('.unit');
+            if (unitElement) {
+                // Add jump animation class
+                unitElement.classList.add('capturing');
+            }
+
+            // Animate the capture bar decreasing
+            const buildingElement = tile.querySelector('.building');
+            const captureBar = tile.querySelector('.capture-progress');
+
+            if (captureBar) {
+                const startPercent = (building.capturePoints / building.maxCapturePoints) * 100;
+                const endPercent = ((building.capturePoints - captureAmount) / building.maxCapturePoints) * 100;
+
+                // Animate from start to end
+                captureBar.style.transition = 'width 0.8s ease-out';
+                setTimeout(() => {
+                    captureBar.style.width = `${Math.max(0, endPercent)}%`;
+                }, 50);
+            }
+
+            // Wait for animation to complete
+            setTimeout(() => {
+                if (unitElement) {
+                    unitElement.classList.remove('capturing');
+                }
+                resolve();
+            }, 1000);
+        });
     }
 
     showProductionMenu(building) {

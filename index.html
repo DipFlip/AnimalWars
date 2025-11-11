@@ -18,14 +18,14 @@
 
         <div id="game-board"></div>
 
-        <div id="money-display">
-            <div class="money-info">
-                <span>💰 Money: </span><span id="player-money">1000</span>
-            </div>
-        </div>
-
         <div id="controls">
             <button id="end-turn-btn" class="control-btn">End Turn</button>
+        </div>
+
+        <div id="money-display">
+            <div class="money-info">
+                <span>💰 </span><span id="player-money">1000</span>
+            </div>
         </div>
 
         <!-- Battle Cutscene Overlay -->
@@ -61,8 +61,7 @@
         <!-- Capture Confirmation Popup -->
         <div id="capture-popup" class="hidden">
             <div class="popup-content">
-                <h3>Capture Building?</h3>
-                <p id="capture-info"></p>
+                <h3>Capture?</h3>
                 <div class="popup-buttons">
                     <button id="capture-yes-btn" class="control-btn">Yes</button>
                     <button id="capture-no-btn" class="control-btn">No</button>

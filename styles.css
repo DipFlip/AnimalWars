@@ -22,6 +22,7 @@ body {
     width: 100%;
     max-width: 500px;
     padding: 0 20px;
+    position: relative;
 }
 
 header {
@@ -223,6 +224,29 @@ h1 {
     }
 }
 
+.unit.capturing {
+    animation: captureJump 0.8s ease-in-out;
+    z-index: 120;
+}
+
+@keyframes captureJump {
+    0% {
+        transform: translateY(0) scale(1);
+    }
+    30% {
+        transform: translateY(-15px) scale(1.1);
+    }
+    50% {
+        transform: translateY(-10px) scale(1.05);
+    }
+    70% {
+        transform: translateY(0) scale(1);
+    }
+    100% {
+        transform: translateY(0) scale(1);
+    }
+}
+
 /* Unit icon image */
 .unit-icon {
     width: clamp(30px, 8vw, 50px);
@@ -264,26 +288,28 @@ h1 {
 .building::before {
     content: '';
     position: absolute;
-    width: 90%;
-    height: 90%;
-    border-radius: 10%;
+    width: 80%;
+    height: 80%;
+    border-radius: 50%;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    opacity: 0.4;
     z-index: 0;
 }
 
 .building.owner-neutral::before {
-    background: radial-gradient(circle, rgba(150, 150, 150, 0.6) 0%, rgba(100, 100, 100, 0.3) 100%);
+    background: radial-gradient(circle, rgba(150, 150, 150, 0.4) 0%, rgba(100, 100, 100, 0.2) 100%);
+    box-shadow: 0 0 8px rgba(150, 150, 150, 0.3);
 }
 
 .building.owner-player::before {
-    background: radial-gradient(circle, rgba(0, 102, 204, 0.6) 0%, rgba(0, 102, 204, 0.3) 100%);
+    background: radial-gradient(circle, rgba(0, 102, 204, 0.7) 0%, rgba(0, 102, 204, 0.3) 100%);
+    box-shadow: 0 0 10px rgba(0, 102, 204, 0.5);
 }
 
 .building.owner-enemy::before {
-    background: radial-gradient(circle, rgba(204, 0, 0, 0.6) 0%, rgba(204, 0, 0, 0.3) 100%);
+    background: radial-gradient(circle, rgba(204, 0, 0, 0.7) 0%, rgba(204, 0, 0, 0.3) 100%);
+    box-shadow: 0 0 10px rgba(204, 0, 0, 0.5);
 }
 
 .building-icon {
@@ -305,20 +331,21 @@ h1 {
 
 /* Money Display */
 #money-display {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    margin-bottom: 15px;
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
     font-size: clamp(0.9rem, 3vw, 1.1rem);
     font-family: "Pixelify Sans", sans-serif;
+    z-index: 10;
 }
 
 .money-info {
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.7);
     padding: 8px 16px;
     border-radius: 8px;
     color: #ffd700;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 /* Controls */
@@ -698,11 +725,16 @@ h1 {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.5);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1002;
+    pointer-events: none;
+}
+
+#capture-popup .popup-content,
+#production-popup .popup-content {
+    pointer-events: all;
 }
 
 #production-popup {
@@ -711,11 +743,11 @@ h1 {
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1002;
+    pointer-events: none;
 }
 
 #capture-popup.hidden,
@@ -728,7 +760,7 @@ h1 {
     padding: 18px 22px;
     border-radius: 12px;
     text-align: center;
-    max-width: 260px;
+    max-width: 220px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
 }
 
@@ -742,16 +774,9 @@ h1 {
 }
 
 #capture-popup .popup-content h3 {
-    font-size: 1.3rem;
-    margin-bottom: 10px;
+    font-size: 1.2rem;
+    margin-bottom: 15px;
     color: #fff;
-}
-
-#capture-popup .popup-content p {
-    font-size: 0.85rem;
-    margin-bottom: 12px;
-    color: #fff;
-    line-height: 1.3;
 }
 
 #production-popup .popup-content h3 {
@@ -807,6 +832,7 @@ h1 {
     display: flex;
     align-items: center;
     gap: 12px;
+    justify-content: flex-end;
 }
 
 .production-option:hover:not(:disabled) {
@@ -823,13 +849,15 @@ h1 {
     height: 36px;
     object-fit: contain;
     image-rendering: crisp-edges;
+    order: 3;
 }
 
 .option-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    flex: 1;
+    gap: 15px;
+    order: 2;
 }
 
 .option-name {
