@@ -1045,6 +1045,14 @@ class Game {
                 if (building && building.owner !== 'enemy') {
                     // Capture the building
                     const captureAmount = Math.ceil(unit.health / 10);
+
+                    // Render before animation to ensure DOM is updated
+                    this.render();
+
+                    // Show capture animation
+                    await this.showCaptureAnimation(unit, building, captureAmount);
+
+                    // Update building state
                     building.capturePoints -= captureAmount;
                     if (building.capturePoints <= 0) {
                         building.capturePoints = building.maxCapturePoints;
@@ -1052,7 +1060,6 @@ class Game {
                     }
                     unit.hasMoved = true;
                     unit.hasAttacked = true;
-                    await new Promise(resolve => setTimeout(resolve, 300));
                     this.render();
                     continue;
                 }
