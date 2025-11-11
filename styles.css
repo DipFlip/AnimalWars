@@ -257,24 +257,28 @@ h1 {
     gap: 10px;
     justify-content: center;
     align-items: center;
-    background: #fffca8;
-    padding: 15px;
-    border-radius: 8px;
+    padding: 0;
 }
 
 .control-btn {
-    padding: 12px 24px;
-    font-size: 1rem;
+    padding: 15px 40px;
+    font-size: 1.1rem;
     font-family: "Jersey 10", sans-serif;
     font-weight: 400;
     font-style: normal;
     border: none;
-    border-radius: 8px;
     cursor: pointer;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background-image: url('art/button.png');
+    background-size: 100% 100%;
+    background-repeat: no-repeat;
+    background-position: center;
+    color: #2c1810;
     transition: all 0.3s;
     text-transform: uppercase;
+    min-width: 200px;
+    min-height: 60px;
+    image-rendering: pixelated;
+    text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.3);
 }
 
 .control-btn:hover:not(:disabled) {
@@ -287,6 +291,13 @@ h1 {
     cursor: not-allowed;
 }
 
+/* Multiplayer button in bottom right */
+.multiplayer-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 500;
+}
 
 /* Battle Cutscene */
 #battle-cutscene {
