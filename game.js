@@ -516,6 +516,11 @@ class Game {
         const fromX = unit.x;
         const fromY = unit.y;
 
+        // Clear movement overlay immediately
+        this.movablePositions = [];
+        this.attackablePositions = [];
+        this.render();
+
         // Get the unit's current tile element
         const fromTile = document.querySelector(`[data-x="${fromX}"][data-y="${fromY}"]`);
         const toTile = document.querySelector(`[data-x="${toX}"][data-y="${toY}"]`);
