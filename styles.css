@@ -55,8 +55,8 @@ h1 {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(10, 1fr);
-    gap: 1px;
-    background: rgba(0, 0, 0, 0.25);
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.35);
     padding: 8px;
     border-radius: 8px;
     margin: 0 auto 20px;
@@ -509,7 +509,7 @@ h1 {
 
     #game-board {
         padding: 5px;
-        gap: 1px;
+        gap: 2px;
     }
 
     #game-board::before {
