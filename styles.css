@@ -100,6 +100,14 @@ h1 {
     filter: brightness(1.1);
 }
 
+.tile:nth-child(8n) {
+    border-right: none;
+}
+
+.tile:nth-child(n+73) {
+    border-bottom: none;
+}
+
 .tile.movable {
     background: rgba(255, 215, 0, 0.5);
     animation: pulse 1s infinite;
@@ -239,18 +247,9 @@ h1 {
 /* Controls */
 #controls {
     display: flex;
+    gap: 10px;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 10px;
-}
-
-/* Multiplayer Controls */
-#multiplayer-controls {
-    display: flex;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.3);
+    background: #fffca8;
     padding: 15px;
     border-radius: 8px;
 }
