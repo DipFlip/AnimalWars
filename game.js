@@ -555,11 +555,12 @@ class Game {
             });
         }
 
-        // Check if infantry landed on a capturable building
+        // Check if infantry landed on a capturable building (only for player units)
         const building = this.getBuildingAt(toX, toY);
         const myTeam = this.isMultiplayer ? this.myTeam : 'player';
 
-        if (unit.type === 'infantry' && building && building.owner !== myTeam && !unit.hasAttacked) {
+        // Only show popup for player units, AI handles captures in aiTurn()
+        if (unit.type === 'infantry' && building && building.owner !== myTeam && !unit.hasAttacked && unit.team === myTeam) {
             // Show capture popup immediately
             this.showCapturePopup(unit, building);
             return;
