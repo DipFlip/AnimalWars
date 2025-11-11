@@ -77,7 +77,7 @@ class Building {
     }
 
     canProduce() {
-        return this.type === 'factory' || this.type === 'hq';
+        return this.type === 'factory';
     }
 
     getIncome() {
