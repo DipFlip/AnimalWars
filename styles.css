@@ -55,8 +55,7 @@ h1 {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(10, 1fr);
-    gap: 2px;
-    background: rgba(0, 0, 0, 0.35);
+    gap: 0;
     padding: 8px;
     border-radius: 8px;
     margin: 0 auto 20px;
@@ -87,11 +86,13 @@ h1 {
     height: 100%;
     aspect-ratio: 1 / 1;
     background: transparent;
-    border: none;
+    border-right: 1px solid rgba(0, 0, 0, 0.35);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.35);
     cursor: pointer;
     position: relative;
     z-index: 1;
     transition: all 0.2s;
+    box-sizing: border-box;
 }
 
 .tile:hover {
@@ -509,7 +510,6 @@ h1 {
 
     #game-board {
         padding: 5px;
-        gap: 2px;
     }
 
     #game-board::before {
