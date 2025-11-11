@@ -801,9 +801,12 @@ h1 {
     color: #2c1810;
     transition: all 0.3s;
     text-transform: uppercase;
-    min-height: 50px;
+    min-height: 60px;
     image-rendering: pixelated;
     text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .production-option:hover:not(:disabled) {
@@ -815,10 +818,18 @@ h1 {
     cursor: not-allowed;
 }
 
+.production-unit-icon {
+    width: 36px;
+    height: 36px;
+    object-fit: contain;
+    image-rendering: crisp-edges;
+}
+
 .option-info {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex: 1;
 }
 
 .option-name {

@@ -110,8 +110,6 @@ class Game {
         // UI state for buildings
         this.capturePopupVisible = false;
         this.productionMenuVisible = false;
-        this.pendingMoveX = undefined;
-        this.pendingMoveY = undefined;
 
         // Multiplayer state
         this.isMultiplayer = false;
@@ -177,8 +175,6 @@ class Game {
         this.attackablePositions = [];
         this.capturePopupVisible = false;
         this.productionMenuVisible = false;
-        this.pendingMoveX = undefined;
-        this.pendingMoveY = undefined;
     }
 
     setupEventListeners() {
@@ -365,19 +361,6 @@ class Game {
 
         // If clicking on a movable position
         if (this.isPositionMovable(x, y)) {
-            // Check if infantry is moving to a capturable building
-            const building = this.getBuildingAt(x, y);
-            const myTeam = this.isMultiplayer ? this.myTeam : 'player';
-
-            if (this.selectedUnit && this.selectedUnit.type === 'infantry' && building && building.owner !== myTeam && !this.selectedUnit.hasAttacked) {
-                // Store the destination for later
-                this.pendingMoveX = x;
-                this.pendingMoveY = y;
-                // Show capture popup before moving
-                this.showCapturePopup(this.selectedUnit, building);
-                return;
-            }
-
             this.moveUnit(this.selectedUnit, x, y);
             return;
         }
@@ -570,6 +553,17 @@ class Game {
                 toX: toX,
                 toY: toY
             });
+        }
+
+        // Check if infantry landed on a capturable building (only for player units)
+        const building = this.getBuildingAt(toX, toY);
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+
+        // Only show popup for player units, AI handles captures in aiTurn()
+        if (unit.type === 'infantry' && building && building.owner !== myTeam && !unit.hasAttacked && unit.team === myTeam) {
+            // Show capture popup immediately after moving
+            this.showCapturePopup(unit, building);
+            return;
         }
 
         // Check if there are enemies in attack range and unit hasn't attacked yet
@@ -1242,54 +1236,32 @@ class Game {
         this.capturePopupVisible = false;
         this.selectedBuilding = null;
 
-        // Clear pending move
-        this.pendingMoveX = undefined;
-        this.pendingMoveY = undefined;
-
-        // Keep the unit selected and restore movement options
+        // Keep the unit selected and show available actions
         if (this.selectedUnit) {
             const unit = this.selectedUnit;
 
-            // Since we didn't move yet, show movement range again
-            if (!unit.hasMoved) {
-                this.showingAttackRange = false;
-                this.calculateMovablePositions(unit);
+            // Unit has already moved, check if it can still attack
+            const hasEnemiesInRange = this.hasEnemiesInAttackRange(unit);
+
+            if (hasEnemiesInRange && !unit.hasAttacked) {
+                // Show attack range
+                this.showingAttackRange = true;
+                this.movablePositions = [];
+                this.calculateAttackablePositionsFromUnit(unit, true);
                 this.render();
             } else {
-                // Unit has already moved, check if it can still attack
-                const hasEnemiesInRange = this.hasEnemiesInAttackRange(unit);
-
-                if (hasEnemiesInRange && !unit.hasAttacked) {
-                    // Show attack range
-                    this.showingAttackRange = true;
-                    this.movablePositions = [];
-                    this.calculateAttackablePositionsFromUnit(unit, true);
-                    this.render();
-                } else {
-                    // No actions left, deselect the unit
-                    this.cancelSelection();
-                }
+                // No actions left, deselect the unit
+                this.cancelSelection();
             }
         }
     }
 
-    async confirmCapture() {
+    confirmCapture() {
         if (!this.selectedUnit || !this.selectedBuilding) return;
 
         const unit = this.selectedUnit;
         const building = this.selectedBuilding;
         const myTeam = this.isMultiplayer ? this.myTeam : 'player';
-
-        // Close popup first
-        document.getElementById('capture-popup').classList.add('hidden');
-        this.capturePopupVisible = false;
-
-        // Move unit to the building if there's a pending move
-        if (this.pendingMoveX !== undefined && this.pendingMoveY !== undefined) {
-            await this.moveUnit(unit, this.pendingMoveX, this.pendingMoveY);
-            this.pendingMoveX = undefined;
-            this.pendingMoveY = undefined;
-        }
 
         // Calculate capture amount based on unit health
         const captureAmount = Math.ceil(unit.health / 10);
@@ -1318,6 +1290,8 @@ class Game {
             });
         }
 
+        document.getElementById('capture-popup').classList.add('hidden');
+        this.capturePopupVisible = false;
         this.selectedBuilding = null;
         this.cancelSelection();
         this.render();
@@ -1333,12 +1307,18 @@ class Game {
 
         document.getElementById('production-money').textContent = myMoney;
 
-        // Enable/disable buttons based on money
+        // Enable/disable buttons based on money and update unit images
         const unitCosts = { infantry: 300, tank: 500, chopper: 700 };
         document.querySelectorAll('.production-option').forEach(btn => {
             const unitType = btn.dataset.unit;
             const cost = unitCosts[unitType];
             btn.disabled = (myMoney < cost);
+
+            // Update unit icon to match the player's team
+            const icon = btn.querySelector('.production-unit-icon');
+            if (icon) {
+                icon.src = this.getUnitImagePath(unitType, myTeam);
+            }
         });
 
         popup.classList.remove('hidden');
