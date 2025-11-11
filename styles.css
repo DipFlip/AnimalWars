@@ -239,9 +239,17 @@ h1 {
 /* Controls */
 #controls {
     display: flex;
-    gap: 10px;
     justify-content: center;
-    flex-wrap: wrap;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+/* Multiplayer Controls */
+#multiplayer-controls {
+    display: flex;
+    justify-content: center;
     background: rgba(0, 0, 0, 0.3);
     padding: 15px;
     border-radius: 8px;

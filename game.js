@@ -129,10 +129,6 @@ class Game {
             this.endTurn();
         });
 
-        document.getElementById('cancel-btn').addEventListener('click', () => {
-            this.cancelSelection();
-        });
-
         document.getElementById('restart-btn').addEventListener('click', () => {
             this.restart();
         });
@@ -218,9 +214,6 @@ class Game {
     }
 
     updateUI() {
-        const cancelBtn = document.getElementById('cancel-btn');
-        cancelBtn.disabled = !this.selectedUnit;
-
         const endTurnBtn = document.getElementById('end-turn-btn');
 
         // Determine if it's our turn
