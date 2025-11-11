@@ -570,17 +570,13 @@ class Game {
         // Check win condition
         this.checkWinCondition();
 
-        // If attacker is still alive and hadn't moved before, let them move now
-        if (!attackerDied && !hadMovedBefore) {
-            this.selectedUnit = attacker;
-            this.showingAttackRange = false;
-            this.calculateMovablePositions(attacker);
-            this.render();
-        } else {
-            // Unit had already moved or died, end their turn
+        // After attacking, deselect the unit
+        // If they died or had already moved, mark them as done
+        // If they're alive and hadn't moved, they can still move if reselected
+        if (attackerDied || hadMovedBefore) {
             attacker.hasMoved = true;
-            this.cancelSelection();
         }
+        this.cancelSelection();
     }
 
     async showPreBattleAnimation(attacker, defender) {
