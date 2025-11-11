@@ -651,12 +651,18 @@ class Game {
 
         const defenderDied = !defender.isAlive();
 
-        // Counter attack if defender is still alive
+        // Counter attack if defender is still alive AND can reach the attacker
         let attackerDied = false;
         if (defender.isAlive()) {
-            const defenderDamage = this.calculateDamage(defender, attacker);
-            attacker.takeDamage(defenderDamage);
-            attackerDied = !attacker.isAlive();
+            // Check if defender is in range to counter-attack
+            const distance = Math.abs(attacker.x - defender.x) + Math.abs(attacker.y - defender.y);
+            const canCounterAttack = distance <= defender.attackRange;
+
+            if (canCounterAttack) {
+                const defenderDamage = this.calculateDamage(defender, attacker);
+                attacker.takeDamage(defenderDamage);
+                attackerDied = !attacker.isAlive();
+            }
         }
 
         // Show death animations on map for defeated units
@@ -829,11 +835,13 @@ class Game {
             const defenderSoldiersAfter = Math.ceil((defenderHealthAfter / defender.maxHealth) * defender.maxSoldiers);
             const defenderSoldiersLost = defenderSoldiersBefore - defenderSoldiersAfter;
 
-            // Calculate counter-attack damage if defender survives
+            // Calculate counter-attack damage if defender survives AND is in range
             const defenderWillSurvive = defenderHealthAfter > 0;
+            const distance = Math.abs(attacker.x - defender.x) + Math.abs(attacker.y - defender.y);
+            const defenderCanCounterAttack = defenderWillSurvive && distance <= defender.attackRange;
             let counterDamage = 0;
             let attackerSoldiersLost = 0;
-            if (defenderWillSurvive) {
+            if (defenderCanCounterAttack) {
                 counterDamage = this.calculateDamage(defender, attacker);
                 const attackerHealthBefore = attacker.health;
                 const attackerHealthAfter = Math.max(0, attackerHealthBefore - counterDamage);
