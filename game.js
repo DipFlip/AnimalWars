@@ -1,3 +1,8 @@
+// Multiplayer server configuration
+// Set this to your multiplayer server URL when deploying to production
+// Leave empty for local development (defaults to same origin)
+const MULTIPLAYER_SERVER_URL = '';
+
 // Unit Class
 class Unit {
     constructor(type, team, x, y) {
@@ -1013,7 +1018,31 @@ class Game {
             return;
         }
 
-        this.socket = io();
+        try {
+            // Connect to multiplayer server (uses MULTIPLAYER_SERVER_URL or same origin)
+            const serverUrl = MULTIPLAYER_SERVER_URL || window.location.origin;
+            this.socket = io(serverUrl, {
+                transports: ['websocket', 'polling'],
+                reconnection: true,
+                reconnectionAttempts: 3,
+                reconnectionDelay: 1000
+            });
+
+            // Handle connection errors
+            this.socket.on('connect_error', (error) => {
+                console.log('Multiplayer server connection failed:', error.message);
+                console.log('Multiplayer mode requires a running server. See README for setup instructions.');
+                this.socket = null;
+            });
+
+            this.socket.on('connect', () => {
+                console.log('Connected to multiplayer server');
+            });
+        } catch (error) {
+            console.log('Failed to initialize multiplayer:', error);
+            this.socket = null;
+            return;
+        }
 
         // Handle waiting for opponent
         this.socket.on('waitingForOpponent', () => {
@@ -1062,8 +1091,8 @@ class Game {
     }
 
     startMultiplayer() {
-        if (!this.socket) {
-            alert('Multiplayer is not available. Please ensure the server is running.');
+        if (!this.socket || !this.socket.connected) {
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
             return;
         }
 

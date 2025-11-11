@@ -43,21 +43,25 @@ A browser-based turn-based strategy game inspired by Advance Wars.
 - Destroy all enemy (red) units to win
 - Don't let all your units get destroyed!
 
-## Deployment to Vercel
+## Architecture
 
-1. Install Vercel CLI (if not already installed):
-   ```bash
-   npm install -g vercel
-   ```
+This game has two deployment modes:
 
-2. Deploy the game:
-   ```bash
-   vercel
-   ```
+1. **Single-Player Mode**: Pure static files (HTML, CSS, JS) - works anywhere
+2. **Multiplayer Mode**: Requires a separate Node.js WebSocket server
 
-3. Follow the prompts to deploy
+## Quick Deployment
 
-Or simply connect your repository to Vercel dashboard for automatic deployments.
+### Single-Player Only (No Server Required)
+Deploy to Vercel, Netlify, or any static host:
+```bash
+vercel
+```
+
+The game works immediately in single-player mode. The multiplayer button will show a helpful message.
+
+### Full Multiplayer Support
+See [DEPLOYMENT.md](DEPLOYMENT.md) for complete instructions on deploying both the static frontend and multiplayer server.
 
 ## Local Development
 
