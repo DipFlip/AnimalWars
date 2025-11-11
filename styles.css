@@ -242,6 +242,9 @@ h1 {
     gap: 10px;
     justify-content: center;
     margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
 }
 
 .control-btn {
@@ -269,7 +272,7 @@ h1 {
 
 /* Info Panel */
 #info-panel {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.3);
     padding: 15px;
     border-radius: 8px;
     text-align: center;
@@ -567,6 +570,9 @@ h1 {
     gap: 10px;
     justify-content: center;
     margin-top: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 15px;
+    border-radius: 8px;
 }
 
 /* Waiting Screen */
