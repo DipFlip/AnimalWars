@@ -389,10 +389,8 @@ class Game {
 
                 if (!this.isInBounds(targetX, targetY)) continue;
 
-                const targetUnit = this.getUnitAt(targetX, targetY);
-                if (targetUnit && targetUnit.team !== unit.team) {
-                    this.attackablePositions.push({ x: targetX, y: targetY });
-                }
+                // Show ALL tiles in range, not just enemy-occupied ones
+                this.attackablePositions.push({ x: targetX, y: targetY });
             }
         }
     }
