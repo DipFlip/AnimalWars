@@ -545,6 +545,9 @@ class Game {
         unit.y = toY;
         unit.hasMoved = true;
 
+        // Render immediately to update DOM with new position
+        this.render();
+
         // Emit move event in multiplayer mode
         if (this.isMultiplayer && this.socket && unit.team === this.myTeam) {
             this.socket.emit('playerMove', {
@@ -561,8 +564,6 @@ class Game {
 
         // Only show popup for player units, AI handles captures in aiTurn()
         if (unit.type === 'infantry' && building && building.owner !== myTeam && !unit.hasAttacked && unit.team === myTeam) {
-            // Render to update DOM before showing popup
-            this.render();
             // Show capture popup immediately after moving
             this.showCapturePopup(unit, building);
             return;
