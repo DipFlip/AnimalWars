@@ -284,7 +284,6 @@ h1 {
 
 .control-btn:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .control-btn:disabled {
