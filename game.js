@@ -239,10 +239,25 @@ class Game {
             return;
         }
 
-        // If clicking on the same unit again, unselect it
+        // If clicking on the same unit again
         if (unit === this.selectedUnit) {
-            this.cancelSelection();
-            return;
+            // If showing attack range, unselect
+            if (this.showingAttackRange) {
+                this.cancelSelection();
+                return;
+            }
+            // If not showing attack range yet, toggle to it
+            if (!unit.hasMoved) {
+                this.showingAttackRange = true;
+                this.movablePositions = [];
+                this.calculateAttackablePositionsFromUnit(unit);
+                this.render();
+                return;
+            } else {
+                // Unit has moved, unselect
+                this.cancelSelection();
+                return;
+            }
         }
 
         // If clicking on a unit
@@ -255,14 +270,16 @@ class Game {
 
     selectUnit(unit) {
         this.selectedUnit = unit;
-        this.showingAttackRange = false;
 
-        // Only calculate movement positions if unit hasn't moved yet
-        if (!unit.hasMoved) {
-            this.calculateMovablePositions(unit);
-        } else {
+        // If unit has already moved, show attack range directly
+        if (unit.hasMoved) {
+            this.showingAttackRange = true;
             this.movablePositions = [];
-            this.attackablePositions = [];
+            this.calculateAttackablePositionsFromUnit(unit);
+        } else {
+            // Show movement range first
+            this.showingAttackRange = false;
+            this.calculateMovablePositions(unit);
         }
 
         this.render();
