@@ -197,14 +197,17 @@ class Game {
     }
 
     updateUI() {
-        document.getElementById('current-turn').textContent =
-            this.currentTurn === 'player' ? 'Player Turn' : 'Enemy Turn';
-
         const cancelBtn = document.getElementById('cancel-btn');
         cancelBtn.disabled = !this.selectedUnit;
 
         const endTurnBtn = document.getElementById('end-turn-btn');
-        endTurnBtn.disabled = this.currentTurn !== 'player';
+        if (this.currentTurn === 'player') {
+            endTurnBtn.textContent = 'End Turn';
+            endTurnBtn.disabled = false;
+        } else {
+            endTurnBtn.textContent = 'Enemy Turn';
+            endTurnBtn.disabled = true;
+        }
 
         // Update selected unit info
         const unitDetails = document.getElementById('unit-details');
