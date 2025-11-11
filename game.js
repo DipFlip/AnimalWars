@@ -147,13 +147,9 @@ class Game {
                     tile.classList.add('movable');
                 }
 
-                // Check if this position is attackable
-                if (this.isPositionAttackable(x, y)) {
-                    if (this.showingAttackRange) {
-                        tile.classList.add('attack-target');
-                    } else {
-                        tile.classList.add('attackable');
-                    }
+                // Check if this position is attackable (only show target emoji in attack mode)
+                if (this.showingAttackRange && this.isPositionAttackable(x, y)) {
+                    tile.classList.add('attack-target');
                 }
 
                 // Check if there's a unit here
@@ -243,11 +239,9 @@ class Game {
             return;
         }
 
-        // If clicking on the same unit again, toggle to attack mode
-        if (unit === this.selectedUnit && !this.showingAttackRange && !unit.hasMoved) {
-            this.showingAttackRange = true;
-            this.movablePositions = [];
-            this.render();
+        // If clicking on the same unit again, unselect it
+        if (unit === this.selectedUnit) {
+            this.cancelSelection();
             return;
         }
 
@@ -261,15 +255,14 @@ class Game {
 
     selectUnit(unit) {
         this.selectedUnit = unit;
+        this.showingAttackRange = false;
 
-        // If unit has already moved, show attack range directly
-        if (unit.hasMoved) {
-            this.showingAttackRange = true;
-            this.movablePositions = [];
-            this.calculateAttackablePositionsFromUnit(unit);
-        } else {
-            this.showingAttackRange = false;
+        // Only calculate movement positions if unit hasn't moved yet
+        if (!unit.hasMoved) {
             this.calculateMovablePositions(unit);
+        } else {
+            this.movablePositions = [];
+            this.attackablePositions = [];
         }
 
         this.render();
@@ -306,9 +299,6 @@ class Game {
                 }
             }
         }
-
-        // Only show attackable positions from current position before moving
-        this.calculateAttackablePositionsFromUnit(unit);
     }
 
     calculateAttackablePositions(unit) {
@@ -368,12 +358,7 @@ class Game {
         unit.y = toY;
         unit.hasMoved = true;
 
-        this.movablePositions = [];
-        this.showingAttackRange = true;
-        // Recalculate attackable positions from new location
-        this.calculateAttackablePositionsFromUnit(unit);
-
-        this.render();
+        this.cancelSelection();
     }
 
     calculateAttackablePositionsFromUnit(unit) {
