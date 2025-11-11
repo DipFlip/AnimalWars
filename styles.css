@@ -280,13 +280,13 @@ h1 {
 /* Ground unit side background */
 .attacker-side.ground,
 .defender-side.ground {
-    background: #3d7020;
+    background: #5fa33f;
 }
 
 /* Air unit side background */
 .attacker-side.air,
 .defender-side.air {
-    background: #2884d8;
+    background: #4da6ff;
 }
 
 .battle-unit-container {
@@ -299,6 +299,7 @@ h1 {
     border-radius: 8px;
     border: 3px solid rgba(255, 255, 255, 0.5);
     min-height: 120px;
+    position: relative;
 }
 
 /* Player team rectangle */
@@ -329,32 +330,30 @@ h1 {
     to { transform: translateY(-10px); }
 }
 
-.attack-animation,
-.defend-animation {
-    width: 100px;
-    height: 100px;
-    border-radius: 50%;
+.target-emoji {
+    position: absolute;
+    font-size: 2rem;
+    opacity: 0;
+    pointer-events: none;
 }
 
-.attack-animation.active {
-    animation: attack 0.5s;
-    background: radial-gradient(circle, #ff0000 0%, transparent 70%);
+.target-emoji.scatter {
+    animation: targetScatter 0.8s forwards;
 }
 
-.defend-animation.active {
-    animation: damage 0.5s;
-}
-
-@keyframes attack {
-    0% { transform: scale(0); opacity: 0; }
-    50% { transform: scale(1.5); opacity: 1; }
-    100% { transform: scale(0); opacity: 0; }
-}
-
-@keyframes damage {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-10px); }
-    75% { transform: translateX(10px); }
+@keyframes targetScatter {
+    0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.5);
+    }
+    30% {
+        opacity: 1;
+        transform: translate(var(--scatter-x), var(--scatter-y)) scale(1);
+    }
+    100% {
+        opacity: 0.3;
+        transform: translate(var(--scatter-x), var(--scatter-y)) scale(0.8);
+    }
 }
 
 .unit-disappear {

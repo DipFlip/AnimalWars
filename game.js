@@ -556,36 +556,50 @@ class Game {
 
             cutscene.classList.remove('hidden');
 
-            // Attack animation sequence
+            // Calculate number of targets (1 per 3 damage)
+            const numTargets = Math.ceil(damage / 3);
+
+            // Show target emojis scattering
             setTimeout(() => {
-                const attackAnim = cutscene.querySelector('.attack-animation');
-                attackAnim.classList.add('active');
+                // Create and scatter target emojis around defender container
+                for (let i = 0; i < numTargets; i++) {
+                    const target = document.createElement('div');
+                    target.className = 'target-emoji';
+                    target.textContent = '🎯';
 
-                setTimeout(() => {
-                    attackAnim.classList.remove('active');
-                    const defendAnim = cutscene.querySelector('.defend-animation');
-                    defendAnim.classList.add('active');
+                    // Random scatter position
+                    const angle = (i / numTargets) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
+                    const distance = 30 + Math.random() * 40;
+                    const scatterX = Math.cos(angle) * distance;
+                    const scatterY = Math.sin(angle) * distance;
 
-                    // Animate soldiers disappearing
+                    target.style.setProperty('--scatter-x', `${scatterX}px`);
+                    target.style.setProperty('--scatter-y', `${scatterY}px`);
+
+                    defenderContainer.appendChild(target);
+
+                    // Stagger the animation
                     setTimeout(() => {
-                        defendAnim.classList.remove('active');
+                        target.classList.add('scatter');
+                    }, i * 100);
+                }
 
-                        // Make soldiers disappear with fire animation
-                        for (let i = 0; i < soldiersLost && i < defenderSoldiers.length; i++) {
-                            const soldierToRemove = defenderSoldiers[defenderSoldiers.length - 1 - i];
-                            setTimeout(() => {
-                                soldierToRemove.textContent = '🔥';
-                                soldierToRemove.classList.add('soldier-fire');
-                            }, i * 100);
-                        }
-
-                        // Hide cutscene after all animations
+                // After targets appear, make soldiers disappear with fire
+                setTimeout(() => {
+                    for (let i = 0; i < soldiersLost && i < defenderSoldiers.length; i++) {
+                        const soldierToRemove = defenderSoldiers[defenderSoldiers.length - 1 - i];
                         setTimeout(() => {
-                            cutscene.classList.add('hidden');
-                            resolve();
-                        }, Math.max(800, soldiersLost * 100 + 500));
-                    }, 500);
-                }, 500);
+                            soldierToRemove.textContent = '🔥';
+                            soldierToRemove.classList.add('soldier-fire');
+                        }, i * 100);
+                    }
+
+                    // Hide cutscene after all animations
+                    setTimeout(() => {
+                        cutscene.classList.add('hidden');
+                        resolve();
+                    }, Math.max(800, soldiersLost * 100 + 500));
+                }, numTargets * 100 + 400);
             }, 500);
         });
     }
