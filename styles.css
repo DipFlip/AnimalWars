@@ -187,11 +187,14 @@ h1 {
     }
 }
 
-/* Unit emoji icon */
+/* Unit icon image */
 .unit-icon {
-    font-size: clamp(1.2rem, 4vw, 2rem);
+    width: clamp(30px, 8vw, 50px);
+    height: clamp(30px, 8vw, 50px);
+    object-fit: contain;
     z-index: 2;
     position: relative;
+    image-rendering: crisp-edges;
 }
 
 /* Unit count display */
@@ -345,6 +348,13 @@ h1 {
     transition: all 0.3s;
 }
 
+.battle-soldier img {
+    width: 40px;
+    height: 40px;
+    object-fit: contain;
+    image-rendering: crisp-edges;
+}
+
 @keyframes battleIdle {
     from { transform: translateY(0); }
     to { transform: translateY(-10px); }
@@ -479,6 +489,11 @@ h1 {
 
     .battle-soldier {
         font-size: 1.3rem;
+    }
+
+    .battle-soldier img {
+        width: 30px;
+        height: 30px;
     }
 
     .battle-unit-container {

@@ -162,11 +162,12 @@ class Game {
                         unitDiv.classList.add('moved');
                     }
 
-                    // Add the unit icon emoji
-                    const iconDiv = document.createElement('div');
-                    iconDiv.className = 'unit-icon';
-                    iconDiv.textContent = this.getUnitIcon(unit.type);
-                    unitDiv.appendChild(iconDiv);
+                    // Add the unit icon image
+                    const iconImg = document.createElement('img');
+                    iconImg.className = 'unit-icon';
+                    iconImg.src = this.getUnitImagePath(unit.type, unit.team);
+                    iconImg.alt = `${unit.team} ${unit.type}`;
+                    unitDiv.appendChild(iconImg);
 
                     // Add the unit number display
                     const countDiv = document.createElement('div');
@@ -545,7 +546,13 @@ class Game {
 
                 if (unitElement && iconElement) {
                     // Change to fire emoji
-                    iconElement.textContent = '🔥';
+                    if (iconElement.tagName === 'IMG') {
+                        // Replace image with fire emoji text
+                        const fireText = document.createTextNode('🔥');
+                        iconElement.replaceWith(fireText);
+                    } else {
+                        iconElement.textContent = '🔥';
+                    }
 
                     // Add death animation class
                     unitElement.classList.add('unit-map-death');
@@ -583,6 +590,12 @@ class Game {
             case 'chopper': return '🚁';
             default: return '❓';
         }
+    }
+
+    getUnitImagePath(type, team) {
+        const teamPrefix = team === 'player' ? 'mouse' : 'bird';
+        const unitName = type === 'infantry' ? 'soldier' : type;
+        return `art/${teamPrefix}_${unitName}.png`;
     }
 
     getUnitCategory(type) {
@@ -636,23 +649,29 @@ class Game {
             }
 
             // Create attacker soldiers
-            const attackerIcon = this.getUnitIcon(attacker.type);
+            const attackerImagePath = this.getUnitImagePath(attacker.type, attacker.team);
             const attackerSoldiers = [];
             for (let i = 0; i < attacker.soldiers; i++) {
                 const soldier = document.createElement('div');
                 soldier.className = 'battle-soldier';
-                soldier.textContent = attackerIcon;
+                const soldierImg = document.createElement('img');
+                soldierImg.src = attackerImagePath;
+                soldierImg.alt = `${attacker.team} ${attacker.type}`;
+                soldier.appendChild(soldierImg);
                 attackerContainer.appendChild(soldier);
                 attackerSoldiers.push(soldier);
             }
 
             // Create defender soldiers
-            const defenderIcon = this.getUnitIcon(defender.type);
+            const defenderImagePath = this.getUnitImagePath(defender.type, defender.team);
             const defenderSoldiers = [];
             for (let i = 0; i < defenderSoldiersBefore; i++) {
                 const soldier = document.createElement('div');
                 soldier.className = 'battle-soldier';
-                soldier.textContent = defenderIcon;
+                const soldierImg = document.createElement('img');
+                soldierImg.src = defenderImagePath;
+                soldierImg.alt = `${defender.team} ${defender.type}`;
+                soldier.appendChild(soldierImg);
                 defenderContainer.appendChild(soldier);
                 defenderSoldiers.push(soldier);
             }
@@ -692,7 +711,7 @@ class Game {
                     for (let i = 0; i < defenderSoldiersLost && i < defenderSoldiers.length; i++) {
                         const soldierToRemove = defenderSoldiers[defenderSoldiers.length - 1 - i];
                         setTimeout(() => {
-                            soldierToRemove.textContent = '🔥';
+                            soldierToRemove.innerHTML = '🔥';
                             soldierToRemove.classList.add('soldier-fire');
                         }, i * 100);
                     }
@@ -732,7 +751,7 @@ class Game {
                                 for (let i = 0; i < attackerSoldiersLost && i < attackerSoldiers.length; i++) {
                                     const soldierToRemove = attackerSoldiers[attackerSoldiers.length - 1 - i];
                                     setTimeout(() => {
-                                        soldierToRemove.textContent = '🔥';
+                                        soldierToRemove.innerHTML = '🔥';
                                         soldierToRemove.classList.add('soldier-fire');
                                     }, i * 100);
                                 }
