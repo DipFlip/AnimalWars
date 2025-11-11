@@ -406,11 +406,11 @@ class Game {
         const hasEnemiesInRange = this.hasEnemiesInAttackRange(unit);
 
         if (hasEnemiesInRange) {
-            // Keep unit selected and show attack range
+            // Keep unit selected and show attack range (only on enemies)
             this.selectedUnit = unit;
             this.showingAttackRange = true;
             this.movablePositions = [];
-            this.calculateAttackablePositionsFromUnit(unit);
+            this.calculateAttackablePositionsFromUnit(unit, true);
             this.render();
         } else {
             this.cancelSelection();
@@ -437,7 +437,7 @@ class Game {
         return false;
     }
 
-    calculateAttackablePositionsFromUnit(unit) {
+    calculateAttackablePositionsFromUnit(unit, onlyEnemies = false) {
         this.attackablePositions = [];
 
         for (let dy = -unit.attackRange; dy <= unit.attackRange; dy++) {
@@ -450,8 +450,16 @@ class Game {
 
                 if (!this.isInBounds(targetX, targetY)) continue;
 
-                // Show ALL tiles in range, not just enemy-occupied ones
-                this.attackablePositions.push({ x: targetX, y: targetY });
+                if (onlyEnemies) {
+                    // Only show tiles with enemy units
+                    const targetUnit = this.getUnitAt(targetX, targetY);
+                    if (targetUnit && targetUnit.team !== unit.team) {
+                        this.attackablePositions.push({ x: targetX, y: targetY });
+                    }
+                } else {
+                    // Show ALL tiles in range
+                    this.attackablePositions.push({ x: targetX, y: targetY });
+                }
             }
         }
     }

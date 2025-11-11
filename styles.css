@@ -55,11 +55,8 @@ h1 {
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(10, 1fr);
-    gap: 0;
-    background-image: url('art/map.png');
-    background-size: auto 100%;
-    background-position: center;
-    background-repeat: no-repeat;
+    gap: 1px;
+    background: rgba(0, 0, 0, 0.25);
     padding: 8px;
     border-radius: 8px;
     margin: 0 auto 20px;
@@ -70,14 +67,30 @@ h1 {
     overflow: hidden;
 }
 
+#game-board::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    background-image: url('art/map.png');
+    background-size: auto 100%;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: 0;
+    pointer-events: none;
+}
+
 .tile {
     width: 100%;
     height: 100%;
     aspect-ratio: 1 / 1;
     background: transparent;
-    border: 1px solid rgba(0, 0, 0, 0.25);
+    border: none;
     cursor: pointer;
     position: relative;
+    z-index: 1;
     transition: all 0.2s;
 }
 
@@ -496,7 +509,14 @@ h1 {
 
     #game-board {
         padding: 5px;
-        gap: 0;
+        gap: 1px;
+    }
+
+    #game-board::before {
+        top: 5px;
+        left: 5px;
+        right: 5px;
+        bottom: 5px;
     }
 
     .player-side,
