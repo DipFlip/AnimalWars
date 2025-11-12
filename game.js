@@ -285,6 +285,7 @@ class Game {
                     iconImg.className = 'unit-icon';
                     iconImg.src = this.getUnitImagePath(unit.type, unit.team);
                     iconImg.alt = `${unit.team} ${unit.type}`;
+                    iconImg.decoding = 'async';
                     unitDiv.appendChild(iconImg);
 
                     // Add the unit number display

@@ -73,9 +73,6 @@ h1 {
     aspect-ratio: 8 / 10;
     position: relative;
     overflow: hidden;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    will-change: contents;
 }
 
 #game-board::before {
@@ -105,10 +102,6 @@ h1 {
     z-index: 1;
     transition: all 0.2s;
     box-sizing: border-box;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
 }
 
 .tile:hover {
@@ -168,11 +161,6 @@ h1 {
     align-items: center;
     justify-content: center;
     position: relative;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    -webkit-font-smoothing: subpixel-antialiased;
 }
 
 /* Colored circle background */
@@ -272,10 +260,6 @@ h1 {
     z-index: 2;
     position: relative;
     image-rendering: crisp-edges;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
 }
 
 /* Unit count display */
@@ -304,10 +288,6 @@ h1 {
     align-items: center;
     justify-content: center;
     z-index: 0;
-    -webkit-backface-visibility: hidden;
-    backface-visibility: hidden;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
 }
 
 .building::before {
