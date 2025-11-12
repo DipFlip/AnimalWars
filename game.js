@@ -991,8 +991,13 @@ class Game {
                     // Hide cutscene after all animations complete
                     const maxSoldiersLost = Math.max(playerSoldiersLost, enemySoldiersLost);
                     setTimeout(() => {
-                        cutscene.classList.add('hidden');
-                        resolve();
+                        // Add closing animation
+                        cutscene.classList.add('closing');
+                        setTimeout(() => {
+                            cutscene.classList.remove('closing');
+                            cutscene.classList.add('hidden');
+                            resolve();
+                        }, 300);
                     }, Math.max(800, maxSoldiersLost * 100 + 500));
                 }, maxTargets * 100 + 400);
             }, 500);
@@ -1308,6 +1313,36 @@ class Game {
         this.render();
 
         const popup = document.getElementById('capture-popup');
+        const popupContent = popup.querySelector('.popup-content');
+
+        // Get the building tile position
+        const tile = document.querySelector(`[data-x="${building.x}"][data-y="${building.y}"]`);
+        if (tile) {
+            const rect = tile.getBoundingClientRect();
+            const boardRect = document.getElementById('game-board').getBoundingClientRect();
+
+            // Calculate position relative to viewport
+            const tileCenter = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+
+            // Position above if in bottom half, below if in top half
+            const isInBottomHalf = building.y >= this.boardHeight / 2;
+
+            if (isInBottomHalf) {
+                // Position above the building
+                popupContent.style.top = `${rect.top - 10}px`;
+                popupContent.style.transform = 'translate(-50%, -100%)';
+            } else {
+                // Position below the building
+                popupContent.style.top = `${rect.bottom + 10}px`;
+                popupContent.style.transform = 'translate(-50%, 0)';
+            }
+
+            popupContent.style.left = `${tileCenter.x}px`;
+        }
+
         popup.classList.remove('hidden');
     }
 
