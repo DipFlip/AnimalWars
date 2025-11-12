@@ -72,8 +72,8 @@ class Building {
         this.x = x;
         this.y = y;
         this.owner = owner; // 'neutral', 'player', 'enemy'
-        this.maxCapturePoints = 20;
-        this.capturePoints = 20; // When this reaches 0, building is captured
+        this.maxCapturePoints = type === 'hq' ? 30 : 20;
+        this.capturePoints = this.maxCapturePoints; // When this reaches 0, building is captured
     }
 
     canProduce() {
@@ -259,8 +259,8 @@ class Game {
                     buildingIcon.textContent = this.getBuildingIcon(building.type);
                     buildingDiv.appendChild(buildingIcon);
 
-                    // Show capture progress if being captured
-                    if (building.capturePoints < building.maxCapturePoints) {
+                    // Show capture progress if being captured or selected
+                    if (building.capturePoints < building.maxCapturePoints || building === this.selectedBuilding) {
                         const captureBar = document.createElement('div');
                         captureBar.className = 'capture-progress';
                         const capturePercent = (building.capturePoints / building.maxCapturePoints) * 100;
@@ -396,6 +396,19 @@ class Game {
                 this.showProductionMenu(building);
                 return;
             }
+            // If clicking on a building (not for production), select it to show health
+            if (building === this.selectedBuilding) {
+                // Clicking same building again, deselect it
+                this.selectedBuilding = null;
+                this.render();
+            } else {
+                this.selectedBuilding = building;
+                this.selectedUnit = null;
+                this.movablePositions = [];
+                this.attackablePositions = [];
+                this.render();
+            }
+            return;
         }
 
         // Check if clicking on a unit
@@ -434,6 +447,7 @@ class Game {
 
     cancelSelection() {
         this.selectedUnit = null;
+        this.selectedBuilding = null;
         this.movablePositions = [];
         this.attackablePositions = [];
         this.showingAttackRange = false;
@@ -1283,6 +1297,9 @@ class Game {
         this.selectedBuilding = building;
         this.capturePopupVisible = true;
 
+        // Render to show capture bar immediately
+        this.render();
+
         const popup = document.getElementById('capture-popup');
         popup.classList.remove('hidden');
     }
@@ -1384,11 +1401,11 @@ class Game {
                 const startPercent = (building.capturePoints / building.maxCapturePoints) * 100;
                 const endPercent = ((building.capturePoints - captureAmount) / building.maxCapturePoints) * 100;
 
-                // Animate from start to end
-                captureBar.style.transition = 'width 0.8s ease-out';
+                // Delay bar animation to sync with jump down (starts at 50% of jump animation = 0.4s)
+                captureBar.style.transition = 'width 0.4s ease-in-out';
                 setTimeout(() => {
                     captureBar.style.width = `${Math.max(0, endPercent)}%`;
-                }, 50);
+                }, 400);
             }
 
             // Wait for animation to complete
