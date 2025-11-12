@@ -1067,7 +1067,9 @@ class Game {
                     // Capture the building
                     const captureAmount = Math.ceil(unit.health / 10);
 
-                    // Render before animation to ensure DOM is updated
+                    // Select building to show capture bar immediately
+                    this.selectedBuilding = building;
+                    // Render before animation to ensure DOM is updated with capture bar
                     this.render();
 
                     // Show capture animation
@@ -1081,6 +1083,7 @@ class Game {
                     }
                     unit.hasMoved = true;
                     unit.hasAttacked = true;
+                    this.selectedBuilding = null;
                     this.render();
                     continue;
                 }
@@ -1174,7 +1177,9 @@ class Game {
                         // Capture the building
                         const captureAmount = Math.ceil(unit.health / 10);
 
-                        // Render before animation to ensure DOM is updated
+                        // Select building to show capture bar immediately
+                        this.selectedBuilding = landedBuilding;
+                        // Render before animation to ensure DOM is updated with capture bar
                         this.render();
 
                         // Show capture animation
@@ -1186,6 +1191,7 @@ class Game {
                             landedBuilding.capturePoints = landedBuilding.maxCapturePoints;
                             landedBuilding.owner = 'enemy';
                         }
+                        this.selectedBuilding = null;
                         this.render();
                     }
                 }
