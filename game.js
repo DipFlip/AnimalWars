@@ -836,6 +836,19 @@ class Game {
             const playerContainer = document.getElementById('player-soldiers');
             const enemyContainer = document.getElementById('enemy-soldiers');
 
+            // Get attacker's tile position for animation origin
+            const attackerTile = document.querySelector(`[data-x="${attacker.x}"][data-y="${attacker.y}"]`);
+            if (attackerTile) {
+                const tileRect = attackerTile.getBoundingClientRect();
+                const boardRect = document.getElementById('game-board').getBoundingClientRect();
+
+                // Calculate position relative to board
+                const originX = ((tileRect.left + tileRect.width / 2 - boardRect.left) / boardRect.width) * 100;
+                const originY = ((tileRect.top + tileRect.height / 2 - boardRect.top) / boardRect.height) * 100;
+
+                cutscene.style.transformOrigin = `${originX}% ${originY}%`;
+            }
+
             // Clear previous soldiers
             playerContainer.innerHTML = '';
             enemyContainer.innerHTML = '';
