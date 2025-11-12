@@ -913,6 +913,7 @@ class Game {
                 const soldierImg = document.createElement('img');
                 soldierImg.src = playerImagePath;
                 soldierImg.alt = `${playerUnit.team} ${playerUnit.type}`;
+                soldierImg.decoding = 'async';
                 soldier.appendChild(soldierImg);
                 playerContainer.appendChild(soldier);
                 playerSoldiers.push(soldier);
@@ -927,6 +928,7 @@ class Game {
                 const soldierImg = document.createElement('img');
                 soldierImg.src = enemyImagePath;
                 soldierImg.alt = `${enemyUnit.team} ${enemyUnit.type}`;
+                soldierImg.decoding = 'async';
                 soldier.appendChild(soldierImg);
                 enemyContainer.appendChild(soldier);
                 enemySoldiers.push(soldier);
