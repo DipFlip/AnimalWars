@@ -836,15 +836,21 @@ class Game {
             const playerContainer = document.getElementById('player-soldiers');
             const enemyContainer = document.getElementById('enemy-soldiers');
 
-            // Get attacker's tile position for animation origin
+            // Get midpoint between attacker and defender for animation origin
             const attackerTile = document.querySelector(`[data-x="${attacker.x}"][data-y="${attacker.y}"]`);
-            if (attackerTile) {
-                const tileRect = attackerTile.getBoundingClientRect();
+            const defenderTile = document.querySelector(`[data-x="${defender.x}"][data-y="${defender.y}"]`);
+            if (attackerTile && defenderTile) {
+                const attackerRect = attackerTile.getBoundingClientRect();
+                const defenderRect = defenderTile.getBoundingClientRect();
                 const boardRect = document.getElementById('game-board').getBoundingClientRect();
 
+                // Calculate midpoint between attacker and defender
+                const midX = (attackerRect.left + attackerRect.width / 2 + defenderRect.left + defenderRect.width / 2) / 2;
+                const midY = (attackerRect.top + attackerRect.height / 2 + defenderRect.top + defenderRect.height / 2) / 2;
+
                 // Calculate position relative to board
-                const originX = ((tileRect.left + tileRect.width / 2 - boardRect.left) / boardRect.width) * 100;
-                const originY = ((tileRect.top + tileRect.height / 2 - boardRect.top) / boardRect.height) * 100;
+                const originX = ((midX - boardRect.left) / boardRect.width) * 100;
+                const originY = ((midY - boardRect.top) / boardRect.height) * 100;
 
                 cutscene.style.transformOrigin = `${originX}% ${originY}%`;
             }
