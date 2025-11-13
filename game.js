@@ -29,14 +29,14 @@ class Unit {
                 this.maxSoldiers = 4;
                 this.movement = 5;
                 this.attackRange = 1;
-                this.attackPower = 45;
+                this.attackPower = 60;
                 break;
             case 'chopper':
                 this.maxHealth = 100;
                 this.health = 100;
                 this.maxSoldiers = 3;
                 this.movement = 6;
-                this.attackRange = 4;
+                this.attackRange = 2;
                 this.attackPower = 35;
                 break;
         }
@@ -1021,7 +1021,7 @@ class Game {
                         }, 300);
                     }, Math.max(800, maxSoldiersLost * 100 + 500));
                 }, maxTargets * 100 + 400);
-            }, 500);
+            }, 900);
         });
     }
 
@@ -1087,8 +1087,29 @@ class Game {
         for (const unit of enemyUnits) {
             if (this.gameOver) break;
 
-            // Check if infantry is on a capturable building
-            if (unit.type === 'infantry') {
+            // Find closest player unit
+            const playerUnits = this.units.filter(u => u.team === 'player');
+            if (playerUnits.length === 0) break;
+
+            let closestPlayer = null;
+            let minDistance = Infinity;
+
+            for (const player of playerUnits) {
+                const dist = Math.abs(player.x - unit.x) + Math.abs(player.y - unit.y);
+                if (dist < minDistance) {
+                    minDistance = dist;
+                    closestPlayer = player;
+                }
+            }
+
+            // Check if can attack - PRIORITIZE ATTACKING
+            const canAttack = minDistance <= unit.attackRange;
+
+            if (canAttack) {
+                await this.attack(unit, closestPlayer);
+                await new Promise(resolve => setTimeout(resolve, 500));
+            } else if (unit.type === 'infantry') {
+                // Only check for capture if we can't attack
                 const building = this.getBuildingAt(unit.x, unit.y);
                 if (building && building.owner !== 'enemy') {
                     // Capture the building
@@ -1116,28 +1137,7 @@ class Game {
                 }
             }
 
-            // Find closest player unit
-            const playerUnits = this.units.filter(u => u.team === 'player');
-            if (playerUnits.length === 0) break;
-
-            let closestPlayer = null;
-            let minDistance = Infinity;
-
-            for (const player of playerUnits) {
-                const dist = Math.abs(player.x - unit.x) + Math.abs(player.y - unit.y);
-                if (dist < minDistance) {
-                    minDistance = dist;
-                    closestPlayer = player;
-                }
-            }
-
-            // Check if can attack
-            const canAttack = minDistance <= unit.attackRange;
-
-            if (canAttack) {
-                await this.attack(unit, closestPlayer);
-                await new Promise(resolve => setTimeout(resolve, 500));
-            } else {
+            if (!canAttack) {
                 // For infantry, prioritize moving to neutral buildings
                 let targetX, targetY;
                 if (unit.type === 'infantry') {
