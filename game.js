@@ -29,14 +29,14 @@ class Unit {
                 this.maxSoldiers = 4;
                 this.movement = 5;
                 this.attackRange = 1;
-                this.attackPower = 45;
+                this.attackPower = 60;
                 break;
             case 'chopper':
                 this.maxHealth = 100;
                 this.health = 100;
                 this.maxSoldiers = 3;
                 this.movement = 6;
-                this.attackRange = 4;
+                this.attackRange = 2;
                 this.attackPower = 35;
                 break;
         }
@@ -65,19 +65,51 @@ class Unit {
     }
 }
 
+// Building Class
+class Building {
+    constructor(type, x, y, owner = 'neutral') {
+        this.type = type; // 'city', 'factory', 'hq'
+        this.x = x;
+        this.y = y;
+        this.owner = owner; // 'neutral', 'player', 'enemy'
+        this.maxCapturePoints = type === 'hq' ? 30 : 20;
+        this.capturePoints = this.maxCapturePoints; // When this reaches 0, building is captured
+    }
+
+    canProduce() {
+        return this.type === 'factory';
+    }
+
+    getIncome() {
+        // Buildings provide income when owned
+        return this.type === 'hq' ? 200 : 100;
+    }
+}
+
 // Game State
 class Game {
     constructor() {
         this.boardWidth = 8;
         this.boardHeight = 10;
         this.units = [];
+        this.buildings = [];
         this.selectedUnit = null;
+        this.selectedBuilding = null;
         this.currentTurn = 'player';
         this.gameOver = false;
         this.movablePositions = [];
         this.attackablePositions = [];
         this.isMovingUnit = false;
         this.showingAttackRange = false;
+
+        // Economy state
+        this.playerMoney = 1000;
+        this.enemyMoney = 1000;
+        this.incomePerTurn = 300; // Base income per turn
+
+        // UI state for buildings
+        this.capturePopupVisible = false;
+        this.productionMenuVisible = false;
 
         // Multiplayer state
         this.isMultiplayer = false;
@@ -104,24 +136,47 @@ class Game {
 
     initGame() {
         this.units = [];
+        this.buildings = [];
         this.gameOver = false;
         this.currentTurn = 'player';
+        this.playerMoney = 1000;
+        this.enemyMoney = 1000;
 
         // Create player units
-        this.units.push(new Unit('infantry', 'player', 1, 8));
+        this.units.push(new Unit('infantry', 'player', 2, 8));
         this.units.push(new Unit('infantry', 'player', 2, 9));
         this.units.push(new Unit('tank', 'player', 0, 8));
         this.units.push(new Unit('chopper', 'player', 1, 9));
 
         // Create enemy units
-        this.units.push(new Unit('infantry', 'enemy', 6, 1));
+        this.units.push(new Unit('infantry', 'enemy', 5, 1));
         this.units.push(new Unit('infantry', 'enemy', 5, 0));
         this.units.push(new Unit('tank', 'enemy', 7, 1));
         this.units.push(new Unit('chopper', 'enemy', 6, 0));
 
+        // Create buildings
+        // Player HQ and factory
+        this.buildings.push(new Building('hq', 0, 9, 'player'));
+        this.buildings.push(new Building('factory', 1, 8, 'player'));
+
+        // Enemy HQ and factory
+        this.buildings.push(new Building('hq', 7, 0, 'enemy'));
+        this.buildings.push(new Building('factory', 6, 1, 'enemy'));
+
+        // Neutral cities in the middle
+        this.buildings.push(new Building('city', 2, 3, 'neutral'));
+        this.buildings.push(new Building('city', 5, 3, 'neutral'));
+        this.buildings.push(new Building('city', 3, 5, 'neutral'));
+        this.buildings.push(new Building('city', 4, 5, 'neutral'));
+        this.buildings.push(new Building('city', 2, 7, 'neutral'));
+        this.buildings.push(new Building('city', 5, 7, 'neutral'));
+
         this.selectedUnit = null;
+        this.selectedBuilding = null;
         this.movablePositions = [];
         this.attackablePositions = [];
+        this.capturePopupVisible = false;
+        this.productionMenuVisible = false;
     }
 
     setupEventListeners() {
@@ -133,12 +188,30 @@ class Game {
             this.restart();
         });
 
-        document.getElementById('multiplayer-btn').addEventListener('click', () => {
-            this.startMultiplayer();
-        });
-
         document.getElementById('cancel-matchmaking-btn').addEventListener('click', () => {
             this.cancelMatchmaking();
+        });
+
+        // Capture popup buttons
+        document.getElementById('capture-yes-btn').addEventListener('click', () => {
+            this.confirmCapture();
+        });
+
+        document.getElementById('capture-no-btn').addEventListener('click', () => {
+            this.cancelCapture();
+        });
+
+        // Production popup buttons
+        document.getElementById('production-cancel-btn').addEventListener('click', () => {
+            this.closeProductionMenu();
+        });
+
+        // Production options
+        document.querySelectorAll('.production-option').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const unitType = btn.dataset.unit;
+                this.produceUnit(unitType);
+            });
         });
     }
 
@@ -170,6 +243,30 @@ class Game {
                     tile.classList.add('attack-target');
                 }
 
+                // Check if there's a building here
+                const building = this.getBuildingAt(x, y);
+                if (building) {
+                    const buildingDiv = document.createElement('div');
+                    buildingDiv.className = `building building-${building.type} owner-${building.owner}`;
+
+                    // Add building icon
+                    const buildingIcon = document.createElement('div');
+                    buildingIcon.className = 'building-icon';
+                    buildingIcon.textContent = this.getBuildingIcon(building.type);
+                    buildingDiv.appendChild(buildingIcon);
+
+                    // Show capture progress if being captured or selected
+                    if (building.capturePoints < building.maxCapturePoints || building === this.selectedBuilding) {
+                        const captureBar = document.createElement('div');
+                        captureBar.className = 'capture-progress';
+                        const capturePercent = (building.capturePoints / building.maxCapturePoints) * 100;
+                        captureBar.style.width = `${capturePercent}%`;
+                        buildingDiv.appendChild(captureBar);
+                    }
+
+                    tile.appendChild(buildingDiv);
+                }
+
                 // Check if there's a unit here
                 const unit = this.getUnitAt(x, y);
                 if (unit) {
@@ -184,6 +281,7 @@ class Game {
                     iconImg.className = 'unit-icon';
                     iconImg.src = this.getUnitImagePath(unit.type, unit.team);
                     iconImg.alt = `${unit.team} ${unit.type}`;
+                    iconImg.decoding = 'async';
                     unitDiv.appendChild(iconImg);
 
                     // Add the unit number display
@@ -231,6 +329,11 @@ class Game {
             endTurnBtn.textContent = 'Enemy Turn';
             endTurnBtn.disabled = true;
         }
+
+        // Update money display
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+        const myMoney = myTeam === 'player' ? this.playerMoney : this.enemyMoney;
+        document.getElementById('player-money').textContent = myMoney;
     }
 
     handleTileClick(x, y) {
@@ -244,6 +347,7 @@ class Game {
         }
 
         const unit = this.getUnitAt(x, y);
+        const building = this.getBuildingAt(x, y);
 
         // If clicking on an attackable position
         if (this.isPositionAttackable(x, y)) {
@@ -281,9 +385,38 @@ class Game {
             }
         }
 
-        // If clicking on a unit
         const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+
+        // Check if clicking on owned factory/building to produce units
+        if (building && !unit) {
+            if (building.owner === myTeam && building.canProduce()) {
+                this.showProductionMenu(building);
+                return;
+            }
+            // If clicking on a building (not for production), select it to show health
+            if (building === this.selectedBuilding) {
+                // Clicking same building again, deselect it
+                this.selectedBuilding = null;
+                this.render();
+            } else {
+                this.selectedBuilding = building;
+                this.selectedUnit = null;
+                this.movablePositions = [];
+                this.attackablePositions = [];
+                this.render();
+            }
+            return;
+        }
+
+        // Check if clicking on a unit
         if (unit && unit.team === myTeam) {
+            // Check if unit is infantry on a capturable building
+            if (unit.type === 'infantry' && building && !unit.hasMoved && !unit.hasAttacked) {
+                if (building.owner !== myTeam) {
+                    this.showCapturePopup(unit, building);
+                    return;
+                }
+            }
             this.selectUnit(unit);
         } else {
             this.cancelSelection();
@@ -311,6 +444,7 @@ class Game {
 
     cancelSelection() {
         this.selectedUnit = null;
+        this.selectedBuilding = null;
         this.movablePositions = [];
         this.attackablePositions = [];
         this.showingAttackRange = false;
@@ -393,6 +527,11 @@ class Game {
         const fromX = unit.x;
         const fromY = unit.y;
 
+        // Clear movement overlay immediately
+        this.movablePositions = [];
+        this.attackablePositions = [];
+        this.render();
+
         // Get the unit's current tile element
         const fromTile = document.querySelector(`[data-x="${fromX}"][data-y="${fromY}"]`);
         const toTile = document.querySelector(`[data-x="${toX}"][data-y="${toY}"]`);
@@ -424,6 +563,9 @@ class Game {
         unit.y = toY;
         unit.hasMoved = true;
 
+        // Render immediately to update DOM with new position
+        this.render();
+
         // Emit move event in multiplayer mode
         if (this.isMultiplayer && this.socket && unit.team === this.myTeam) {
             this.socket.emit('playerMove', {
@@ -432,6 +574,17 @@ class Game {
                 toX: toX,
                 toY: toY
             });
+        }
+
+        // Check if infantry landed on a capturable building (only for player units)
+        const building = this.getBuildingAt(toX, toY);
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+
+        // Only show popup for player units, AI handles captures in aiTurn()
+        if (unit.type === 'infantry' && building && building.owner !== myTeam && !unit.hasAttacked && unit.team === myTeam) {
+            // Show capture popup immediately after moving
+            this.showCapturePopup(unit, building);
+            return;
         }
 
         // Check if there are enemies in attack range and unit hasn't attacked yet
@@ -519,12 +672,18 @@ class Game {
 
         const defenderDied = !defender.isAlive();
 
-        // Counter attack if defender is still alive
+        // Counter attack if defender is still alive AND can reach the attacker
         let attackerDied = false;
         if (defender.isAlive()) {
-            const defenderDamage = this.calculateDamage(defender, attacker);
-            attacker.takeDamage(defenderDamage);
-            attackerDied = !attacker.isAlive();
+            // Check if defender is in range to counter-attack
+            const distance = Math.abs(attacker.x - defender.x) + Math.abs(attacker.y - defender.y);
+            const canCounterAttack = distance <= defender.attackRange;
+
+            if (canCounterAttack) {
+                const defenderDamage = this.calculateDamage(defender, attacker);
+                attacker.takeDamage(defenderDamage);
+                attackerDied = !attacker.isAlive();
+            }
         }
 
         // Show death animations on map for defeated units
@@ -641,6 +800,15 @@ class Game {
         }
     }
 
+    getBuildingIcon(type) {
+        switch(type) {
+            case 'city': return '🏘️';
+            case 'factory': return '🏭';
+            case 'hq': return '🏛️';
+            default: return '🏢';
+        }
+    }
+
     getUnitImagePath(type, team) {
         const teamPrefix = team === 'player' ? 'mouse' : 'bird';
         const unitName = type === 'infantry' ? 'soldier' : type;
@@ -663,6 +831,25 @@ class Game {
             const enemySide = cutscene.querySelector('.enemy-side');
             const playerContainer = document.getElementById('player-soldiers');
             const enemyContainer = document.getElementById('enemy-soldiers');
+
+            // Get midpoint between attacker and defender for animation origin
+            const attackerTile = document.querySelector(`[data-x="${attacker.x}"][data-y="${attacker.y}"]`);
+            const defenderTile = document.querySelector(`[data-x="${defender.x}"][data-y="${defender.y}"]`);
+            if (attackerTile && defenderTile) {
+                const attackerRect = attackerTile.getBoundingClientRect();
+                const defenderRect = defenderTile.getBoundingClientRect();
+                const boardRect = document.getElementById('game-board').getBoundingClientRect();
+
+                // Calculate midpoint between attacker and defender
+                const midX = (attackerRect.left + attackerRect.width / 2 + defenderRect.left + defenderRect.width / 2) / 2;
+                const midY = (attackerRect.top + attackerRect.height / 2 + defenderRect.top + defenderRect.height / 2) / 2;
+
+                // Calculate position relative to board
+                const originX = ((midX - boardRect.left) / boardRect.width) * 100;
+                const originY = ((midY - boardRect.top) / boardRect.height) * 100;
+
+                cutscene.style.transformOrigin = `${originX}% ${originY}%`;
+            }
 
             // Clear previous soldiers
             playerContainer.innerHTML = '';
@@ -688,11 +875,13 @@ class Game {
             const defenderSoldiersAfter = Math.ceil((defenderHealthAfter / defender.maxHealth) * defender.maxSoldiers);
             const defenderSoldiersLost = defenderSoldiersBefore - defenderSoldiersAfter;
 
-            // Calculate counter-attack damage if defender survives
+            // Calculate counter-attack damage if defender survives AND is in range
             const defenderWillSurvive = defenderHealthAfter > 0;
+            const distance = Math.abs(attacker.x - defender.x) + Math.abs(attacker.y - defender.y);
+            const defenderCanCounterAttack = defenderWillSurvive && distance <= defender.attackRange;
             let counterDamage = 0;
             let attackerSoldiersLost = 0;
-            if (defenderWillSurvive) {
+            if (defenderCanCounterAttack) {
                 counterDamage = this.calculateDamage(defender, attacker);
                 const attackerHealthBefore = attacker.health;
                 const attackerHealthAfter = Math.max(0, attackerHealthBefore - counterDamage);
@@ -720,6 +909,7 @@ class Game {
                 const soldierImg = document.createElement('img');
                 soldierImg.src = playerImagePath;
                 soldierImg.alt = `${playerUnit.team} ${playerUnit.type}`;
+                soldierImg.decoding = 'async';
                 soldier.appendChild(soldierImg);
                 playerContainer.appendChild(soldier);
                 playerSoldiers.push(soldier);
@@ -734,6 +924,7 @@ class Game {
                 const soldierImg = document.createElement('img');
                 soldierImg.src = enemyImagePath;
                 soldierImg.alt = `${enemyUnit.team} ${enemyUnit.type}`;
+                soldierImg.decoding = 'async';
                 soldier.appendChild(soldierImg);
                 enemyContainer.appendChild(soldier);
                 enemySoldiers.push(soldier);
@@ -817,11 +1008,16 @@ class Game {
                     // Hide cutscene after all animations complete
                     const maxSoldiersLost = Math.max(playerSoldiersLost, enemySoldiersLost);
                     setTimeout(() => {
-                        cutscene.classList.add('hidden');
-                        resolve();
+                        // Add closing animation
+                        cutscene.classList.add('closing');
+                        setTimeout(() => {
+                            cutscene.classList.remove('closing');
+                            cutscene.classList.add('hidden');
+                            resolve();
+                        }, 300);
                     }, Math.max(800, maxSoldiersLost * 100 + 500));
                 }, maxTargets * 100 + 400);
-            }, 500);
+            }, 900);
         });
     }
 
@@ -833,7 +1029,17 @@ class Game {
 
         if (this.isMultiplayer) {
             // In multiplayer, end our turn
-            this.units.filter(u => u.team === this.myTeam).forEach(u => u.reset());
+            const myTeam = this.myTeam;
+            this.units.filter(u => u.team === myTeam).forEach(u => u.reset());
+
+            // Add income for my team
+            const income = this.calculateIncome(myTeam);
+            if (myTeam === 'player') {
+                this.playerMoney += income;
+            } else {
+                this.enemyMoney += income;
+            }
+
             this.cancelSelection();
             this.socket.emit('endTurn');
             this.render();
@@ -842,6 +1048,10 @@ class Game {
             if (this.currentTurn === 'player') {
                 // Reset player units
                 this.units.filter(u => u.team === 'player').forEach(u => u.reset());
+
+                // Add income for player
+                this.playerMoney += this.calculateIncome('player');
+
                 this.currentTurn = 'enemy';
                 this.cancelSelection();
                 this.render();
@@ -853,6 +1063,21 @@ class Game {
     }
 
     async aiTurn() {
+        // Try to produce units from owned factories
+        const enemyFactories = this.buildings.filter(b => b.owner === 'enemy' && b.canProduce());
+        for (const factory of enemyFactories) {
+            if (this.enemyMoney >= 300 && !this.getUnitAt(factory.x, factory.y)) {
+                // Produce infantry if we have money
+                const newUnit = new Unit('infantry', 'enemy', factory.x, factory.y);
+                newUnit.hasMoved = true;
+                newUnit.hasAttacked = true;
+                this.units.push(newUnit);
+                this.enemyMoney -= 300;
+                await new Promise(resolve => setTimeout(resolve, 300));
+                this.render();
+            }
+        }
+
         const enemyUnits = this.units.filter(u => u.team === 'enemy' && !u.hasMoved);
 
         for (const unit of enemyUnits) {
@@ -873,17 +1098,77 @@ class Game {
                 }
             }
 
-            // Check if can attack
+            // Check if can attack - PRIORITIZE ATTACKING
             const canAttack = minDistance <= unit.attackRange;
 
             if (canAttack) {
                 await this.attack(unit, closestPlayer);
                 await new Promise(resolve => setTimeout(resolve, 500));
-            } else {
-                // Move towards player
+            } else if (unit.type === 'infantry') {
+                // Only check for capture if we can't attack
+                const building = this.getBuildingAt(unit.x, unit.y);
+                if (building && building.owner !== 'enemy') {
+                    // Capture the building
+                    const captureAmount = Math.ceil(unit.health / 10);
+
+                    // Select building to show capture bar immediately
+                    this.selectedBuilding = building;
+                    // Render before animation to ensure DOM is updated with capture bar
+                    this.render();
+
+                    // Show capture animation
+                    await this.showCaptureAnimation(unit, building, captureAmount);
+
+                    // Update building state
+                    building.capturePoints -= captureAmount;
+                    if (building.capturePoints <= 0) {
+                        building.capturePoints = building.maxCapturePoints;
+                        building.owner = 'enemy';
+                    }
+                    unit.hasMoved = true;
+                    unit.hasAttacked = true;
+                    this.selectedBuilding = null;
+                    this.render();
+                    continue;
+                }
+            }
+
+            if (!canAttack) {
+                // For infantry, prioritize moving to neutral buildings
+                let targetX, targetY;
+                if (unit.type === 'infantry') {
+                    const neutralBuildings = this.buildings.filter(b => b.owner === 'neutral');
+                    if (neutralBuildings.length > 0) {
+                        // Find closest neutral building
+                        let closestBuilding = null;
+                        let minBuildingDistance = Infinity;
+                        for (const building of neutralBuildings) {
+                            const dist = Math.abs(building.x - unit.x) + Math.abs(building.y - unit.y);
+                            if (dist < minBuildingDistance) {
+                                minBuildingDistance = dist;
+                                closestBuilding = building;
+                            }
+                        }
+                        if (closestBuilding && minBuildingDistance < minDistance) {
+                            targetX = closestBuilding.x;
+                            targetY = closestBuilding.y;
+                        } else {
+                            targetX = closestPlayer.x;
+                            targetY = closestPlayer.y;
+                        }
+                    } else {
+                        targetX = closestPlayer.x;
+                        targetY = closestPlayer.y;
+                    }
+                } else {
+                    targetX = closestPlayer.x;
+                    targetY = closestPlayer.y;
+                }
+
+                // Move towards target
                 const direction = {
-                    x: Math.sign(closestPlayer.x - unit.x),
-                    y: Math.sign(closestPlayer.y - unit.y)
+                    x: Math.sign(targetX - unit.x),
+                    y: Math.sign(targetY - unit.y)
                 };
 
                 // Try to move in the best direction
@@ -908,6 +1193,32 @@ class Game {
                     }
                 }
 
+                // After moving, check if infantry landed on capturable building
+                if (moved && unit.type === 'infantry') {
+                    const landedBuilding = this.getBuildingAt(unit.x, unit.y);
+                    if (landedBuilding && landedBuilding.owner !== 'enemy') {
+                        // Capture the building
+                        const captureAmount = Math.ceil(unit.health / 10);
+
+                        // Select building to show capture bar immediately
+                        this.selectedBuilding = landedBuilding;
+                        // Render before animation to ensure DOM is updated with capture bar
+                        this.render();
+
+                        // Show capture animation
+                        await this.showCaptureAnimation(unit, landedBuilding, captureAmount);
+
+                        // Update building state
+                        landedBuilding.capturePoints -= captureAmount;
+                        if (landedBuilding.capturePoints <= 0) {
+                            landedBuilding.capturePoints = landedBuilding.maxCapturePoints;
+                            landedBuilding.owner = 'enemy';
+                        }
+                        this.selectedBuilding = null;
+                        this.render();
+                    }
+                }
+
                 // After moving, check if can attack now
                 if (moved) {
                     const newDistance = Math.abs(closestPlayer.x - unit.x) + Math.abs(closestPlayer.y - unit.y);
@@ -919,6 +1230,9 @@ class Game {
             }
         }
 
+        // Add income for enemy
+        this.enemyMoney += this.calculateIncome('enemy');
+
         // End AI turn
         this.units.filter(u => u.team === 'enemy').forEach(u => u.reset());
         this.currentTurn = 'player';
@@ -929,14 +1243,19 @@ class Game {
         const playerUnits = this.units.filter(u => u.team === 'player');
         const enemyUnits = this.units.filter(u => u.team === 'enemy');
 
-        if (playerUnits.length === 0) {
-            this.showGameOver(false);
-        } else if (enemyUnits.length === 0) {
-            this.showGameOver(true);
+        // Check if HQ has been captured
+        const playerHQ = this.buildings.find(b => b.type === 'hq' && b.owner === 'player');
+        const enemyHQ = this.buildings.find(b => b.type === 'hq' && b.owner === 'enemy');
+
+        // Player loses if all units are destroyed OR HQ is captured
+        if (playerUnits.length === 0 || !playerHQ) {
+            this.showGameOver(false, !playerHQ);
+        } else if (enemyUnits.length === 0 || !enemyHQ) {
+            this.showGameOver(true, !enemyHQ);
         }
     }
 
-    showGameOver(playerWon) {
+    showGameOver(playerWon, hqCaptured = false) {
         this.gameOver = true;
         const gameOverDiv = document.getElementById('game-over');
         const title = document.getElementById('game-over-title');
@@ -944,10 +1263,18 @@ class Game {
 
         if (playerWon) {
             title.textContent = 'Victory!';
-            message.textContent = 'You have defeated all enemy units!';
+            if (hqCaptured) {
+                message.textContent = 'You have captured the enemy headquarters!';
+            } else {
+                message.textContent = 'You have defeated all enemy units!';
+            }
         } else {
             title.textContent = 'Defeat!';
-            message.textContent = 'All your units have been destroyed!';
+            if (hqCaptured) {
+                message.textContent = 'Your headquarters has been captured!';
+            } else {
+                message.textContent = 'All your units have been destroyed!';
+            }
         }
 
         // Emit game over event in multiplayer mode
@@ -960,6 +1287,8 @@ class Game {
 
     restart() {
         document.getElementById('game-over').classList.add('hidden');
+        document.getElementById('capture-popup').classList.add('hidden');
+        document.getElementById('production-popup').classList.add('hidden');
 
         // Reset multiplayer state
         this.isMultiplayer = false;
@@ -979,12 +1308,263 @@ class Game {
         return this.units.find(u => u.x === x && u.y === y);
     }
 
+    getBuildingAt(x, y) {
+        return this.buildings.find(b => b.x === x && b.y === y);
+    }
+
     isPositionMovable(x, y) {
         return this.movablePositions.some(p => p.x === x && p.y === y);
     }
 
     isPositionAttackable(x, y) {
         return this.attackablePositions.some(p => p.x === x && p.y === y);
+    }
+
+    // Building methods
+    showCapturePopup(unit, building) {
+        this.selectedUnit = unit;
+        this.selectedBuilding = building;
+        this.capturePopupVisible = true;
+
+        // Render to show capture bar immediately
+        this.render();
+
+        const popup = document.getElementById('capture-popup');
+        const popupContent = popup.querySelector('.popup-content');
+
+        // Get the building tile position
+        const tile = document.querySelector(`[data-x="${building.x}"][data-y="${building.y}"]`);
+        if (tile) {
+            const rect = tile.getBoundingClientRect();
+            const boardRect = document.getElementById('game-board').getBoundingClientRect();
+
+            // Calculate position relative to viewport
+            const tileCenter = {
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2
+            };
+
+            // Position above if in bottom half, below if in top half
+            const isInBottomHalf = building.y >= this.boardHeight / 2;
+
+            if (isInBottomHalf) {
+                // Position above the building
+                popupContent.style.top = `${rect.top - 10}px`;
+                popupContent.style.transform = 'translate(-50%, -100%)';
+            } else {
+                // Position below the building
+                popupContent.style.top = `${rect.bottom + 10}px`;
+                popupContent.style.transform = 'translate(-50%, 0)';
+            }
+
+            popupContent.style.left = `${tileCenter.x}px`;
+        }
+
+        popup.classList.remove('hidden');
+    }
+
+    cancelCapture() {
+        document.getElementById('capture-popup').classList.add('hidden');
+        this.capturePopupVisible = false;
+        this.selectedBuilding = null;
+
+        // Keep the unit selected and show available actions
+        if (this.selectedUnit) {
+            const unit = this.selectedUnit;
+
+            // Unit has already moved, check if it can still attack
+            const hasEnemiesInRange = this.hasEnemiesInAttackRange(unit);
+
+            if (hasEnemiesInRange && !unit.hasAttacked) {
+                // Show attack range
+                this.showingAttackRange = true;
+                this.movablePositions = [];
+                this.calculateAttackablePositionsFromUnit(unit, true);
+                this.render();
+            } else {
+                // No actions left, deselect the unit
+                this.cancelSelection();
+            }
+        }
+    }
+
+    async confirmCapture() {
+        if (!this.selectedUnit || !this.selectedBuilding) return;
+
+        const unit = this.selectedUnit;
+        const building = this.selectedBuilding;
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+
+        // Close popup first
+        document.getElementById('capture-popup').classList.add('hidden');
+        this.capturePopupVisible = false;
+
+        // Calculate capture amount based on unit health
+        const captureAmount = Math.ceil(unit.health / 10);
+
+        // Render to ensure DOM is up to date before animation
+        this.render();
+
+        // Show capture animation
+        await this.showCaptureAnimation(unit, building, captureAmount);
+
+        // Reduce building capture points
+        building.capturePoints -= captureAmount;
+
+        if (building.capturePoints <= 0) {
+            // Building is captured!
+            building.capturePoints = building.maxCapturePoints;
+            building.owner = myTeam;
+        }
+
+        // Mark unit as used
+        unit.hasMoved = true;
+        unit.hasAttacked = true;
+
+        // Emit capture event in multiplayer
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('captureBuilding', {
+                unitX: unit.x,
+                unitY: unit.y,
+                buildingX: building.x,
+                buildingY: building.y,
+                captureAmount: captureAmount
+            });
+        }
+
+        this.selectedBuilding = null;
+        this.cancelSelection();
+        this.render();
+    }
+
+    async showCaptureAnimation(unit, building, captureAmount) {
+        return new Promise((resolve) => {
+            // Find the unit tile
+            const tile = document.querySelector(`[data-x="${unit.x}"][data-y="${unit.y}"]`);
+            if (!tile) {
+                resolve();
+                return;
+            }
+
+            const unitElement = tile.querySelector('.unit');
+            if (unitElement) {
+                // Add jump animation class
+                unitElement.classList.add('capturing');
+            }
+
+            // Animate the capture bar decreasing
+            const buildingElement = tile.querySelector('.building');
+            const captureBar = tile.querySelector('.capture-progress');
+
+            if (captureBar) {
+                const startPercent = (building.capturePoints / building.maxCapturePoints) * 100;
+                const endPercent = ((building.capturePoints - captureAmount) / building.maxCapturePoints) * 100;
+
+                // Delay bar animation to sync with jump down (starts at 50% of jump animation = 0.4s)
+                captureBar.style.transition = 'width 0.4s ease-in-out';
+                setTimeout(() => {
+                    captureBar.style.width = `${Math.max(0, endPercent)}%`;
+                }, 400);
+            }
+
+            // Wait for animation to complete
+            setTimeout(() => {
+                if (unitElement) {
+                    unitElement.classList.remove('capturing');
+                }
+                resolve();
+            }, 1000);
+        });
+    }
+
+    showProductionMenu(building) {
+        this.selectedBuilding = building;
+        this.productionMenuVisible = true;
+
+        const popup = document.getElementById('production-popup');
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+        const myMoney = myTeam === 'player' ? this.playerMoney : this.enemyMoney;
+
+        document.getElementById('production-money').textContent = myMoney;
+
+        // Enable/disable buttons based on money and update unit images
+        const unitCosts = { infantry: 300, tank: 500, chopper: 700 };
+        document.querySelectorAll('.production-option').forEach(btn => {
+            const unitType = btn.dataset.unit;
+            const cost = unitCosts[unitType];
+            btn.disabled = (myMoney < cost);
+
+            // Update unit icon to match the player's team
+            const icon = btn.querySelector('.production-unit-icon');
+            if (icon) {
+                icon.src = this.getUnitImagePath(unitType, myTeam);
+            }
+        });
+
+        popup.classList.remove('hidden');
+    }
+
+    closeProductionMenu() {
+        document.getElementById('production-popup').classList.add('hidden');
+        this.productionMenuVisible = false;
+        this.selectedBuilding = null;
+    }
+
+    produceUnit(unitType) {
+        if (!this.selectedBuilding) return;
+
+        const building = this.selectedBuilding;
+        const myTeam = this.isMultiplayer ? this.myTeam : 'player';
+        const unitCosts = { infantry: 300, tank: 500, chopper: 700 };
+        const cost = unitCosts[unitType];
+
+        // Check if we have enough money
+        const myMoney = myTeam === 'player' ? this.playerMoney : this.enemyMoney;
+        if (myMoney < cost) {
+            return;
+        }
+
+        // Check if tile is occupied
+        if (this.getUnitAt(building.x, building.y)) {
+            alert('Cannot produce unit - tile is occupied!');
+            return;
+        }
+
+        // Deduct money
+        if (myTeam === 'player') {
+            this.playerMoney -= cost;
+        } else {
+            this.enemyMoney -= cost;
+        }
+
+        // Create new unit with actions already used
+        const newUnit = new Unit(unitType, myTeam, building.x, building.y);
+        newUnit.hasMoved = true;
+        newUnit.hasAttacked = true;
+        this.units.push(newUnit);
+
+        // Emit production event in multiplayer
+        if (this.isMultiplayer && this.socket) {
+            this.socket.emit('produceUnit', {
+                buildingX: building.x,
+                buildingY: building.y,
+                unitType: unitType
+            });
+        }
+
+        this.closeProductionMenu();
+        this.render();
+    }
+
+    calculateIncome(team) {
+        let income = this.incomePerTurn;
+        // Add income from owned buildings
+        this.buildings.forEach(building => {
+            if (building.owner === team) {
+                income += building.getIncome();
+            }
+        });
+        return income;
     }
 
     // Multiplayer methods
@@ -1031,6 +1611,8 @@ class Game {
         this.socket.on('gameMatched', (data) => {
             console.log('Game matched!', data);
             this.hideWaitingScreen();
+            // Hide room display if it's visible
+            document.getElementById('room-display').classList.add('hidden');
             this.startMultiplayerGame(data);
         });
 
@@ -1065,6 +1647,25 @@ class Game {
             alert('Opponent disconnected! Returning to single player mode.');
             this.restart();
         });
+
+        // Handle room created
+        this.socket.on('roomCreated', (data) => {
+            console.log('Room created:', data.roomCode);
+            const roomDisplay = document.getElementById('room-display');
+            const roomCodeText = document.getElementById('room-code-text');
+            roomCodeText.textContent = data.roomCode;
+            roomDisplay.classList.remove('hidden');
+        });
+
+        // Handle join room error
+        this.socket.on('joinRoomError', (data) => {
+            console.log('Join room error:', data.message);
+            const joinRoomInput = document.getElementById('join-room-input');
+            const joinError = document.getElementById('join-error');
+            joinError.textContent = data.message;
+            joinError.classList.remove('hidden');
+            joinRoomInput.classList.remove('hidden');
+        });
     }
 
     startMultiplayer() {
@@ -1082,6 +1683,26 @@ class Game {
             this.socket.emit('cancelMatchmaking');
         }
         this.hideWaitingScreen();
+    }
+
+    createRoom() {
+        if (!this.socket || !this.socket.connected) {
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
+            return;
+        }
+
+        console.log('Creating room...');
+        this.socket.emit('createRoom');
+    }
+
+    joinRoom(roomCode) {
+        if (!this.socket || !this.socket.connected) {
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
+            return;
+        }
+
+        console.log('Joining room:', roomCode);
+        this.socket.emit('joinRoom', { roomCode });
     }
 
     startMultiplayerGame(data) {
@@ -1136,8 +1757,177 @@ class Game {
     }
 }
 
+// Initialize marching units for start screen
+function initMarchingUnits() {
+    const marchingContainer = document.getElementById('marching-units');
+    const unitImages = [
+        'art/mouse_soldier.png',
+        'art/mouse_tank.png',
+        'art/mouse_chopper.png',
+        'art/bird_soldier.png',
+        'art/bird_tank.png',
+        'art/bird_chopper.png'
+    ];
+
+    // Create 10 units pre-warmed at different positions
+    for (let i = 0; i < 10; i++) {
+        const unit = document.createElement('div');
+        unit.className = 'marching-unit';
+
+        // Random vertical position
+        const topPercent = 20 + Math.random() * 60;
+        unit.style.top = `${topPercent}%`;
+
+        // Pre-warm: spread units across the screen
+        // Each unit starts at a different point in the march animation
+        const delay = -(i * 1.5); // Negative delay to pre-populate
+        unit.style.animationDelay = `${delay}s, ${Math.random() * 0.5}s`;
+
+        const img = document.createElement('img');
+        img.src = unitImages[Math.floor(Math.random() * unitImages.length)];
+        img.alt = 'Marching unit';
+
+        unit.appendChild(img);
+        marchingContainer.appendChild(unit);
+    }
+}
+
 // Start the game when page loads
 let game;
 window.addEventListener('DOMContentLoaded', () => {
-    game = new Game();
+    // Initialize marching units on start screen
+    initMarchingUnits();
+
+    // Get UI elements
+    const startScreen = document.getElementById('start-screen');
+    const multiplayerMenu = document.getElementById('multiplayer-menu');
+    const roomDisplay = document.getElementById('room-display');
+    const joinRoomInput = document.getElementById('join-room-input');
+    const backgroundMusic = document.getElementById('background-music');
+
+    // Play music and hide start screen helper
+    function startGame() {
+        backgroundMusic.play().catch(err => {
+            console.log('Audio playback failed:', err);
+        });
+        startScreen.classList.add('hidden');
+        document.getElementById('game-view').classList.remove('hidden');
+    }
+
+    // Initialize marching units for a container
+    function initMarchingForContainer(container) {
+        const unitImages = [
+            'art/mouse_soldier.png',
+            'art/mouse_tank.png',
+            'art/mouse_chopper.png',
+            'art/bird_soldier.png',
+            'art/bird_tank.png',
+            'art/bird_chopper.png'
+        ];
+
+        for (let i = 0; i < 10; i++) {
+            const unit = document.createElement('div');
+            unit.className = 'marching-unit';
+            const topPercent = 20 + Math.random() * 60;
+            unit.style.top = `${topPercent}%`;
+            const delay = -(i * 1.5);
+            unit.style.animationDelay = `${delay}s, ${Math.random() * 0.5}s`;
+            const img = document.createElement('img');
+            img.src = unitImages[Math.floor(Math.random() * unitImages.length)];
+            img.alt = 'Marching unit';
+            unit.appendChild(img);
+            container.appendChild(unit);
+        }
+    }
+
+    // Single Player button
+    document.getElementById('single-player-btn').addEventListener('click', () => {
+        startGame();
+        game = new Game();
+    });
+
+    // Multiplayer button - show multiplayer menu
+    document.getElementById('multiplayer-btn').addEventListener('click', () => {
+        startGame();
+        multiplayerMenu.classList.remove('hidden');
+        // Initialize marching units for multiplayer menu if not already done
+        const menuUnitsContainer = multiplayerMenu.querySelector('.menu-marching-units');
+        if (menuUnitsContainer && menuUnitsContainer.children.length === 0) {
+            initMarchingForContainer(menuUnitsContainer);
+        }
+    });
+
+    // Back to start from multiplayer menu
+    document.getElementById('back-to-start-btn').addEventListener('click', () => {
+        multiplayerMenu.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+    });
+
+    // Random Match button
+    document.getElementById('random-match-btn').addEventListener('click', () => {
+        multiplayerMenu.classList.add('hidden');
+        game = new Game();
+        game.startMultiplayer();
+    });
+
+    // Create Room button
+    document.getElementById('create-room-btn').addEventListener('click', () => {
+        multiplayerMenu.classList.add('hidden');
+        game = new Game();
+        game.createRoom();
+        // Initialize marching units for room display
+        const roomUnitsContainer = roomDisplay.querySelector('.menu-marching-units');
+        if (roomUnitsContainer && roomUnitsContainer.children.length === 0) {
+            initMarchingForContainer(roomUnitsContainer);
+        }
+    });
+
+    // Join Room button - show input
+    document.getElementById('join-room-btn').addEventListener('click', () => {
+        multiplayerMenu.classList.add('hidden');
+        joinRoomInput.classList.remove('hidden');
+        document.getElementById('room-code-input').value = '';
+        document.getElementById('join-error').classList.add('hidden');
+        // Initialize marching units for join room screen
+        const joinUnitsContainer = joinRoomInput.querySelector('.menu-marching-units');
+        if (joinUnitsContainer && joinUnitsContainer.children.length === 0) {
+            initMarchingForContainer(joinUnitsContainer);
+        }
+    });
+
+    // Cancel join room
+    document.getElementById('cancel-join-btn').addEventListener('click', () => {
+        joinRoomInput.classList.add('hidden');
+        multiplayerMenu.classList.remove('hidden');
+    });
+
+    // Confirm join room
+    document.getElementById('confirm-join-btn').addEventListener('click', () => {
+        const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+        if (roomCode.length < 4) {
+            document.getElementById('join-error').textContent = 'Please enter a valid room code';
+            document.getElementById('join-error').classList.remove('hidden');
+            return;
+        }
+
+        joinRoomInput.classList.add('hidden');
+        game = new Game();
+        game.joinRoom(roomCode);
+    });
+
+    // Allow Enter key to join room
+    document.getElementById('room-code-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('confirm-join-btn').click();
+        }
+    });
+
+    // Cancel room
+    document.getElementById('cancel-room-btn').addEventListener('click', () => {
+        if (game && game.socket) {
+            game.socket.emit('cancelRoom');
+        }
+        roomDisplay.classList.add('hidden');
+        multiplayerMenu.classList.remove('hidden');
+    });
 });

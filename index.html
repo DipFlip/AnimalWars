@@ -12,14 +12,73 @@
 </head>
 <body>
     <div id="game-container">
-        <header>
-            <img src="logo.png" alt="Animal Wars" id="game-logo">
-        </header>
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <div class="start-content">
+                <img src="logo.png" alt="Animal Wars" class="start-logo">
+                <button id="single-player-btn" class="control-btn start-btn">Single Player</button>
+                <button id="multiplayer-btn" class="control-btn start-btn">Multiplayer</button>
+            </div>
+            <div id="marching-units"></div>
+        </div>
 
-        <div id="game-board"></div>
+        <!-- Multiplayer Menu -->
+        <div id="multiplayer-menu" class="hidden">
+            <div class="menu-content">
+                <img src="logo.png" alt="Animal Wars" class="menu-logo">
+                <h2>Multiplayer</h2>
+                <div class="menu-buttons">
+                    <button id="random-match-btn" class="control-btn menu-btn">Random Match</button>
+                    <button id="create-room-btn" class="control-btn menu-btn">Create Room</button>
+                    <button id="join-room-btn" class="control-btn menu-btn">Join Room</button>
+                    <button id="back-to-start-btn" class="control-btn menu-btn">Back</button>
+                </div>
+            </div>
+            <div class="menu-marching-units"></div>
+        </div>
 
-        <div id="controls">
-            <button id="end-turn-btn" class="control-btn">End Turn</button>
+        <!-- Room Display (after creating) -->
+        <div id="room-display" class="hidden">
+            <div class="room-content">
+                <h2>Room Created!</h2>
+                <p>Share this code with your friend:</p>
+                <div class="room-code-display" id="room-code-text">ABCD</div>
+                <p class="room-status">Waiting for opponent...</p>
+                <button id="cancel-room-btn" class="control-btn">Cancel</button>
+            </div>
+            <div class="menu-marching-units"></div>
+        </div>
+
+        <!-- Join Room Input -->
+        <div id="join-room-input" class="hidden">
+            <div class="join-content">
+                <h2>Join Room</h2>
+                <p>Enter room code:</p>
+                <input type="text" id="room-code-input" class="room-code-field" maxlength="6" placeholder="ABCD12">
+                <div class="join-buttons">
+                    <button id="confirm-join-btn" class="control-btn">Join</button>
+                    <button id="cancel-join-btn" class="control-btn">Cancel</button>
+                </div>
+                <p id="join-error" class="error-message hidden">Invalid room code</p>
+            </div>
+            <div class="menu-marching-units"></div>
+        </div>
+
+        <div id="game-view" class="hidden">
+            <header>
+                <img src="logo.png" alt="Animal Wars" id="game-logo">
+            </header>
+
+            <div id="game-board"></div>
+
+            <div id="controls">
+                <button id="end-turn-btn" class="control-btn">End Turn</button>
+                <div id="money-display">
+                    <div class="money-info">
+                        <span>💰 </span><span id="player-money">1000</span>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Battle Cutscene Overlay -->
@@ -51,10 +110,62 @@
                 <button id="restart-btn" class="control-btn">Restart Game</button>
             </div>
         </div>
+
+        <!-- Capture Confirmation Popup -->
+        <div id="capture-popup" class="hidden">
+            <div class="popup-content">
+                <h3>Capture?</h3>
+                <div class="popup-buttons">
+                    <button id="capture-yes-btn" class="control-btn">Yes</button>
+                    <button id="capture-no-btn" class="control-btn">No</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Production Menu Popup -->
+        <div id="production-popup" class="hidden">
+            <div class="popup-content">
+                <h3>Produce Unit</h3>
+                <p class="money-info">💰 Money: <span id="production-money">0</span></p>
+                <div id="production-options">
+                    <button class="production-option" data-unit="infantry">
+                        <img src="art/mouse_soldier.png" alt="Infantry" class="production-unit-icon">
+                        <div class="option-info">
+                            <span class="option-name">Infantry</span>
+                            <span class="option-cost">💰 300</span>
+                        </div>
+                    </button>
+                    <button class="production-option" data-unit="tank">
+                        <img src="art/mouse_tank.png" alt="Tank" class="production-unit-icon">
+                        <div class="option-info">
+                            <span class="option-name">Tank</span>
+                            <span class="option-cost">💰 500</span>
+                        </div>
+                    </button>
+                    <button class="production-option" data-unit="chopper">
+                        <img src="art/mouse_chopper.png" alt="Chopper" class="production-unit-icon">
+                        <div class="option-info">
+                            <span class="option-name">Chopper</span>
+                            <span class="option-cost">💰 700</span>
+                        </div>
+                    </button>
+                </div>
+                <button id="production-cancel-btn" class="control-btn">Cancel</button>
+            </div>
+        </div>
     </div>
 
-    <!-- Multiplayer button positioned in bottom right -->
-    <button id="multiplayer-btn" class="control-btn multiplayer-btn">Multiplayer</button>
+    <!-- X (Twitter) Link -->
+    <a href="https://x.com/emirof" target="_blank" rel="noopener noreferrer" class="x-logo-link" aria-label="Follow on X">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+        </svg>
+    </a>
+
+    <!-- Background Music -->
+    <audio id="background-music" loop>
+        <source src="welcome-to-the-jungle.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="game.js"></script>
