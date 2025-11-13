@@ -1581,19 +1581,48 @@ class Game {
             this.socket = io(serverUrl, {
                 transports: ['websocket', 'polling'],
                 reconnection: true,
-                reconnectionAttempts: 3,
-                reconnectionDelay: 1000
+                reconnectionAttempts: 5,
+                reconnectionDelay: 1000,
+                timeout: 20000
             });
 
             // Handle connection errors
             this.socket.on('connect_error', (error) => {
                 console.log('Multiplayer server connection failed:', error.message);
                 console.log('Multiplayer mode requires a running server. See README for setup instructions.');
-                this.socket = null;
             });
 
             this.socket.on('connect', () => {
                 console.log('Connected to multiplayer server');
+            });
+
+            // Handle disconnection
+            this.socket.on('disconnect', (reason) => {
+                console.log('Disconnected from multiplayer server. Reason:', reason);
+                if (reason === 'io server disconnect') {
+                    // Server disconnected, try to reconnect
+                    console.log('Server disconnected, attempting to reconnect...');
+                    this.socket.connect();
+                } else if (reason === 'io client disconnect') {
+                    // Client disconnected manually
+                    console.log('Client disconnected manually');
+                } else {
+                    // Other reasons (ping timeout, transport close, etc.)
+                    console.log('Connection lost, will auto-reconnect...');
+                }
+            });
+
+            // Handle reconnection
+            this.socket.on('reconnect', (attemptNumber) => {
+                console.log('Reconnected to multiplayer server after', attemptNumber, 'attempts');
+            });
+
+            this.socket.on('reconnect_error', (error) => {
+                console.log('Reconnection failed:', error.message);
+            });
+
+            this.socket.on('reconnect_failed', () => {
+                console.log('Failed to reconnect to multiplayer server');
             });
         } catch (error) {
             console.log('Failed to initialize multiplayer:', error);
@@ -1668,14 +1697,49 @@ class Game {
         });
     }
 
-    startMultiplayer() {
-        if (!this.socket || !this.socket.connected) {
+    waitForConnection(timeout = 5000) {
+        return new Promise((resolve, reject) => {
+            if (!this.socket) {
+                reject(new Error('Socket not initialized'));
+                return;
+            }
+
+            if (this.socket.connected) {
+                resolve();
+                return;
+            }
+
+            const timeoutId = setTimeout(() => {
+                reject(new Error('Connection timeout'));
+            }, timeout);
+
+            this.socket.once('connect', () => {
+                clearTimeout(timeoutId);
+                resolve();
+            });
+
+            this.socket.once('connect_error', (error) => {
+                clearTimeout(timeoutId);
+                reject(error);
+            });
+        });
+    }
+
+    async startMultiplayer() {
+        if (!this.socket) {
             alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
             return;
         }
 
-        console.log('Starting multiplayer...');
-        this.socket.emit('joinMatchmaking');
+        try {
+            console.log('Connecting to multiplayer server...');
+            await this.waitForConnection();
+            console.log('Starting multiplayer...');
+            this.socket.emit('joinMatchmaking');
+        } catch (error) {
+            console.error('Failed to connect:', error);
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
+        }
     }
 
     cancelMatchmaking() {
@@ -1685,24 +1749,38 @@ class Game {
         this.hideWaitingScreen();
     }
 
-    createRoom() {
-        if (!this.socket || !this.socket.connected) {
+    async createRoom() {
+        if (!this.socket) {
             alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
             return;
         }
 
-        console.log('Creating room...');
-        this.socket.emit('createRoom');
+        try {
+            console.log('Connecting to multiplayer server...');
+            await this.waitForConnection();
+            console.log('Creating room...');
+            this.socket.emit('createRoom');
+        } catch (error) {
+            console.error('Failed to connect:', error);
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
+        }
     }
 
-    joinRoom(roomCode) {
-        if (!this.socket || !this.socket.connected) {
+    async joinRoom(roomCode) {
+        if (!this.socket) {
             alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
             return;
         }
 
-        console.log('Joining room:', roomCode);
-        this.socket.emit('joinRoom', { roomCode });
+        try {
+            console.log('Connecting to multiplayer server...');
+            await this.waitForConnection();
+            console.log('Joining room:', roomCode);
+            this.socket.emit('joinRoom', { roomCode });
+        } catch (error) {
+            console.error('Failed to connect:', error);
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
+        }
     }
 
     startMultiplayerGame(data) {
