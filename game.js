@@ -1720,8 +1720,62 @@ class Game {
     }
 }
 
+// Initialize marching units for start screen
+function initMarchingUnits() {
+    const marchingContainer = document.getElementById('marching-units');
+    const unitImages = [
+        'art/mouse_soldier.png',
+        'art/mouse_tank.png',
+        'art/mouse_chopper.png',
+        'art/cat_soldier.png',
+        'art/cat_tank.png',
+        'art/cat_chopper.png'
+    ];
+
+    // Create 10 units pre-warmed at different positions
+    for (let i = 0; i < 10; i++) {
+        const unit = document.createElement('div');
+        unit.className = 'marching-unit';
+
+        // Random vertical position
+        const topPercent = 20 + Math.random() * 60;
+        unit.style.top = `${topPercent}%`;
+
+        // Pre-warm: spread units across the screen
+        // Each unit starts at a different point in the march animation
+        const delay = -(i * 1.5); // Negative delay to pre-populate
+        unit.style.animationDelay = `${delay}s, ${Math.random() * 0.5}s`;
+
+        const img = document.createElement('img');
+        img.src = unitImages[Math.floor(Math.random() * unitImages.length)];
+        img.alt = 'Marching unit';
+
+        unit.appendChild(img);
+        marchingContainer.appendChild(unit);
+    }
+}
+
 // Start the game when page loads
 let game;
 window.addEventListener('DOMContentLoaded', () => {
-    game = new Game();
+    // Initialize marching units on start screen
+    initMarchingUnits();
+
+    // Handle start button
+    const startButton = document.getElementById('start-game-btn');
+    const startScreen = document.getElementById('start-screen');
+    const backgroundMusic = document.getElementById('background-music');
+
+    startButton.addEventListener('click', () => {
+        // Play background music
+        backgroundMusic.play().catch(err => {
+            console.log('Audio playback failed:', err);
+        });
+
+        // Hide start screen
+        startScreen.classList.add('hidden');
+
+        // Initialize game
+        game = new Game();
+    });
 });

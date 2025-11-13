@@ -12,6 +12,15 @@
 </head>
 <body>
     <div id="game-container">
+        <!-- Start Screen -->
+        <div id="start-screen">
+            <div class="start-content">
+                <img src="logo.png" alt="Animal Wars" class="start-logo">
+                <button id="start-game-btn" class="control-btn start-btn">Start Game</button>
+            </div>
+            <div id="marching-units"></div>
+        </div>
+
         <header>
             <img src="logo.png" alt="Animal Wars" id="game-logo">
         </header>
@@ -101,6 +110,11 @@
             </div>
         </div>
     </div>
+
+    <!-- Background Music -->
+    <audio id="background-music" loop>
+        <source src="background_music.mp3" type="audio/mpeg">
+    </audio>
 
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
     <script src="game.js"></script>
