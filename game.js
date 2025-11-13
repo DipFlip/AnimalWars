@@ -1764,9 +1764,9 @@ function initMarchingUnits() {
         'art/mouse_soldier.png',
         'art/mouse_tank.png',
         'art/mouse_chopper.png',
-        'art/cat_soldier.png',
-        'art/cat_tank.png',
-        'art/cat_chopper.png'
+        'art/bird_soldier.png',
+        'art/bird_tank.png',
+        'art/bird_chopper.png'
     ];
 
     // Create 10 units pre-warmed at different positions
@@ -1811,6 +1811,33 @@ window.addEventListener('DOMContentLoaded', () => {
             console.log('Audio playback failed:', err);
         });
         startScreen.classList.add('hidden');
+        document.getElementById('game-view').classList.remove('hidden');
+    }
+
+    // Initialize marching units for a container
+    function initMarchingForContainer(container) {
+        const unitImages = [
+            'art/mouse_soldier.png',
+            'art/mouse_tank.png',
+            'art/mouse_chopper.png',
+            'art/bird_soldier.png',
+            'art/bird_tank.png',
+            'art/bird_chopper.png'
+        ];
+
+        for (let i = 0; i < 10; i++) {
+            const unit = document.createElement('div');
+            unit.className = 'marching-unit';
+            const topPercent = 20 + Math.random() * 60;
+            unit.style.top = `${topPercent}%`;
+            const delay = -(i * 1.5);
+            unit.style.animationDelay = `${delay}s, ${Math.random() * 0.5}s`;
+            const img = document.createElement('img');
+            img.src = unitImages[Math.floor(Math.random() * unitImages.length)];
+            img.alt = 'Marching unit';
+            unit.appendChild(img);
+            container.appendChild(unit);
+        }
     }
 
     // Single Player button
@@ -1823,6 +1850,11 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('multiplayer-btn').addEventListener('click', () => {
         startGame();
         multiplayerMenu.classList.remove('hidden');
+        // Initialize marching units for multiplayer menu if not already done
+        const menuUnitsContainer = multiplayerMenu.querySelector('.menu-marching-units');
+        if (menuUnitsContainer && menuUnitsContainer.children.length === 0) {
+            initMarchingForContainer(menuUnitsContainer);
+        }
     });
 
     // Back to start from multiplayer menu
@@ -1843,6 +1875,11 @@ window.addEventListener('DOMContentLoaded', () => {
         multiplayerMenu.classList.add('hidden');
         game = new Game();
         game.createRoom();
+        // Initialize marching units for room display
+        const roomUnitsContainer = roomDisplay.querySelector('.menu-marching-units');
+        if (roomUnitsContainer && roomUnitsContainer.children.length === 0) {
+            initMarchingForContainer(roomUnitsContainer);
+        }
     });
 
     // Join Room button - show input
@@ -1851,6 +1888,11 @@ window.addEventListener('DOMContentLoaded', () => {
         joinRoomInput.classList.remove('hidden');
         document.getElementById('room-code-input').value = '';
         document.getElementById('join-error').classList.add('hidden');
+        // Initialize marching units for join room screen
+        const joinUnitsContainer = joinRoomInput.querySelector('.menu-marching-units');
+        if (joinUnitsContainer && joinUnitsContainer.children.length === 0) {
+            initMarchingForContainer(joinUnitsContainer);
+        }
     });
 
     // Cancel join room

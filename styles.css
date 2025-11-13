@@ -339,7 +339,6 @@ h1 {
 #money-display {
     font-size: clamp(0.9rem, 3vw, 1.1rem);
     font-family: "Pixelify Sans", sans-serif;
-    margin-bottom: 5px;
 }
 
 .money-info {
@@ -354,11 +353,12 @@ h1 {
 /* Controls */
 #controls {
     display: flex;
-    flex-direction: column;
-    gap: 10px;
+    flex-direction: row;
+    gap: 15px;
     justify-content: center;
     align-items: center;
     padding: 0;
+    flex-wrap: wrap;
 }
 
 .control-btn {
@@ -1002,9 +1002,11 @@ h1 {
     background: #fcfbdc url('animal_wars_background.png') repeat;
     background-size: 400px;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     z-index: 9999;
+    overflow: hidden;
 }
 
 #multiplayer-menu.hidden,
@@ -1016,20 +1018,22 @@ h1 {
 .menu-content,
 .room-content,
 .join-content {
-    background: rgba(255, 255, 255, 0.95);
-    padding: 40px;
-    border-radius: 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     text-align: center;
     max-width: 400px;
     width: 90%;
+    z-index: 2;
+    position: relative;
 }
 
 .menu-logo {
-    max-width: 250px;
-    width: 100%;
+    max-width: 300px;
+    width: 80%;
     height: auto;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 .menu-content h2,
@@ -1037,8 +1041,11 @@ h1 {
 .join-content h2 {
     color: #2c1810;
     font-size: 2rem;
-    margin-bottom: 25px;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+    text-shadow: 2px 2px 4px rgba(255, 255, 255, 0.8);
+    background: rgba(252, 251, 220, 0.9);
+    padding: 10px 20px;
+    border-radius: 12px;
 }
 
 .menu-buttons,
@@ -1105,18 +1112,35 @@ h1 {
     display: none;
 }
 
-.join-content p {
+.room-content p {
     color: #2c1810;
     font-size: 1.1rem;
     margin: 10px 0;
+    background: rgba(252, 251, 220, 0.9);
+    padding: 8px 16px;
+    border-radius: 8px;
 }
 
-.join-buttons {
-    flex-direction: row;
-    justify-content: space-between;
-    gap: 10px;
+.join-content p {
+    background: rgba(252, 251, 220, 0.9);
+    padding: 8px 16px;
+    border-radius: 8px;
+    margin: 5px 0;
 }
 
-.join-buttons .control-btn {
-    flex: 1;
+/* Marching units for menu screens */
+.menu-marching-units {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+}
+
+/* Game view container */
+#game-view.hidden {
+    display: none;
 }

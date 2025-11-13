@@ -34,6 +34,7 @@
                     <button id="back-to-start-btn" class="control-btn menu-btn">Back</button>
                 </div>
             </div>
+            <div class="menu-marching-units"></div>
         </div>
 
         <!-- Room Display (after creating) -->
@@ -45,6 +46,7 @@
                 <p class="room-status">Waiting for opponent...</p>
                 <button id="cancel-room-btn" class="control-btn">Cancel</button>
             </div>
+            <div class="menu-marching-units"></div>
         </div>
 
         <!-- Join Room Input -->
@@ -59,21 +61,24 @@
                 </div>
                 <p id="join-error" class="error-message hidden">Invalid room code</p>
             </div>
+            <div class="menu-marching-units"></div>
         </div>
 
-        <header>
-            <img src="logo.png" alt="Animal Wars" id="game-logo">
-        </header>
+        <div id="game-view" class="hidden">
+            <header>
+                <img src="logo.png" alt="Animal Wars" id="game-logo">
+            </header>
 
-        <div id="game-board"></div>
+            <div id="game-board"></div>
 
-        <div id="controls">
-            <div id="money-display">
-                <div class="money-info">
-                    <span>💰 </span><span id="player-money">1000</span>
+            <div id="controls">
+                <button id="end-turn-btn" class="control-btn">End Turn</button>
+                <div id="money-display">
+                    <div class="money-info">
+                        <span>💰 </span><span id="player-money">1000</span>
+                    </div>
                 </div>
             </div>
-            <button id="end-turn-btn" class="control-btn">End Turn</button>
         </div>
 
         <!-- Battle Cutscene Overlay -->
