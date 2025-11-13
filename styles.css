@@ -1144,3 +1144,46 @@ h1 {
 #game-view.hidden {
     display: none;
 }
+
+/* X (Twitter) Logo Link */
+.x-logo-link {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 40px;
+    height: 40px;
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.x-logo-link:hover {
+    background: rgba(0, 0, 0, 0.95);
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.x-logo-link svg {
+    width: 20px;
+    height: 20px;
+    fill: #ffffff;
+}
+
+@media (max-width: 768px) {
+    .x-logo-link {
+        width: 35px;
+        height: 35px;
+        bottom: 15px;
+        right: 15px;
+    }
+
+    .x-logo-link svg {
+        width: 18px;
+        height: 18px;
+    }
+}
