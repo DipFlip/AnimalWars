@@ -188,10 +188,6 @@ class Game {
             this.restart();
         });
 
-        document.getElementById('multiplayer-btn').addEventListener('click', () => {
-            this.startMultiplayer();
-        });
-
         document.getElementById('cancel-matchmaking-btn').addEventListener('click', () => {
             this.cancelMatchmaking();
         });
@@ -1615,6 +1611,8 @@ class Game {
         this.socket.on('gameMatched', (data) => {
             console.log('Game matched!', data);
             this.hideWaitingScreen();
+            // Hide room display if it's visible
+            document.getElementById('room-display').classList.add('hidden');
             this.startMultiplayerGame(data);
         });
 
@@ -1649,6 +1647,25 @@ class Game {
             alert('Opponent disconnected! Returning to single player mode.');
             this.restart();
         });
+
+        // Handle room created
+        this.socket.on('roomCreated', (data) => {
+            console.log('Room created:', data.roomCode);
+            const roomDisplay = document.getElementById('room-display');
+            const roomCodeText = document.getElementById('room-code-text');
+            roomCodeText.textContent = data.roomCode;
+            roomDisplay.classList.remove('hidden');
+        });
+
+        // Handle join room error
+        this.socket.on('joinRoomError', (data) => {
+            console.log('Join room error:', data.message);
+            const joinRoomInput = document.getElementById('join-room-input');
+            const joinError = document.getElementById('join-error');
+            joinError.textContent = data.message;
+            joinError.classList.remove('hidden');
+            joinRoomInput.classList.remove('hidden');
+        });
     }
 
     startMultiplayer() {
@@ -1666,6 +1683,26 @@ class Game {
             this.socket.emit('cancelMatchmaking');
         }
         this.hideWaitingScreen();
+    }
+
+    createRoom() {
+        if (!this.socket || !this.socket.connected) {
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
+            return;
+        }
+
+        console.log('Creating room...');
+        this.socket.emit('createRoom');
+    }
+
+    joinRoom(roomCode) {
+        if (!this.socket || !this.socket.connected) {
+            alert('Multiplayer server is not available.\n\nTo enable multiplayer:\n1. Deploy the multiplayer server (see README)\n2. Update MULTIPLAYER_SERVER_URL in game.js with your server URL\n\nFor now, continue playing in single-player mode!');
+            return;
+        }
+
+        console.log('Joining room:', roomCode);
+        this.socket.emit('joinRoom', { roomCode });
     }
 
     startMultiplayerGame(data) {
@@ -1761,21 +1798,94 @@ window.addEventListener('DOMContentLoaded', () => {
     // Initialize marching units on start screen
     initMarchingUnits();
 
-    // Handle start button
-    const startButton = document.getElementById('start-game-btn');
+    // Get UI elements
     const startScreen = document.getElementById('start-screen');
+    const multiplayerMenu = document.getElementById('multiplayer-menu');
+    const roomDisplay = document.getElementById('room-display');
+    const joinRoomInput = document.getElementById('join-room-input');
     const backgroundMusic = document.getElementById('background-music');
 
-    startButton.addEventListener('click', () => {
-        // Play background music
+    // Play music and hide start screen helper
+    function startGame() {
         backgroundMusic.play().catch(err => {
             console.log('Audio playback failed:', err);
         });
-
-        // Hide start screen
         startScreen.classList.add('hidden');
+    }
 
-        // Initialize game
+    // Single Player button
+    document.getElementById('single-player-btn').addEventListener('click', () => {
+        startGame();
         game = new Game();
+    });
+
+    // Multiplayer button - show multiplayer menu
+    document.getElementById('multiplayer-btn').addEventListener('click', () => {
+        startGame();
+        multiplayerMenu.classList.remove('hidden');
+    });
+
+    // Back to start from multiplayer menu
+    document.getElementById('back-to-start-btn').addEventListener('click', () => {
+        multiplayerMenu.classList.add('hidden');
+        startScreen.classList.remove('hidden');
+    });
+
+    // Random Match button
+    document.getElementById('random-match-btn').addEventListener('click', () => {
+        multiplayerMenu.classList.add('hidden');
+        game = new Game();
+        game.startMultiplayer();
+    });
+
+    // Create Room button
+    document.getElementById('create-room-btn').addEventListener('click', () => {
+        multiplayerMenu.classList.add('hidden');
+        game = new Game();
+        game.createRoom();
+    });
+
+    // Join Room button - show input
+    document.getElementById('join-room-btn').addEventListener('click', () => {
+        multiplayerMenu.classList.add('hidden');
+        joinRoomInput.classList.remove('hidden');
+        document.getElementById('room-code-input').value = '';
+        document.getElementById('join-error').classList.add('hidden');
+    });
+
+    // Cancel join room
+    document.getElementById('cancel-join-btn').addEventListener('click', () => {
+        joinRoomInput.classList.add('hidden');
+        multiplayerMenu.classList.remove('hidden');
+    });
+
+    // Confirm join room
+    document.getElementById('confirm-join-btn').addEventListener('click', () => {
+        const roomCode = document.getElementById('room-code-input').value.trim().toUpperCase();
+        if (roomCode.length < 4) {
+            document.getElementById('join-error').textContent = 'Please enter a valid room code';
+            document.getElementById('join-error').classList.remove('hidden');
+            return;
+        }
+
+        joinRoomInput.classList.add('hidden');
+        game = new Game();
+        game.joinRoom(roomCode);
+    });
+
+    // Allow Enter key to join room
+    document.getElementById('room-code-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            document.getElementById('confirm-join-btn').click();
+        }
+    });
+
+    // Cancel room
+    document.getElementById('cancel-room-btn').addEventListener('click', () => {
+        if (game && game.socket) {
+            game.socket.emit('cancelRoom');
+        }
+        roomDisplay.classList.add('hidden');
+        multiplayerMenu.classList.remove('hidden');
     });
 });

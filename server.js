@@ -21,8 +21,19 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Generate random room code
+function generateRoomCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return code;
+}
+
 // Matchmaking queue
 let waitingPlayer = null;
+const rooms = new Map(); // roomCode -> {host, guest, status: 'waiting'|'playing'}
 const activeGames = new Map(); // gameId -> {player1, player2, currentTurn, gameState}
 
 io.on('connection', (socket) => {
@@ -155,6 +166,115 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Handle create room
+  socket.on('createRoom', () => {
+    let roomCode;
+    // Generate unique room code
+    do {
+      roomCode = generateRoomCode();
+    } while (rooms.has(roomCode));
+
+    rooms.set(roomCode, {
+      host: socket,
+      guest: null,
+      status: 'waiting'
+    });
+
+    socket.roomCode = roomCode;
+    socket.emit('roomCreated', { roomCode });
+    console.log(`Room ${roomCode} created by ${socket.id}`);
+  });
+
+  // Handle join room
+  socket.on('joinRoom', (data) => {
+    const roomCode = data.roomCode.toUpperCase();
+    const room = rooms.get(roomCode);
+
+    if (!room) {
+      socket.emit('joinRoomError', { message: 'Room not found' });
+      console.log(`Failed join attempt: Room ${roomCode} not found`);
+      return;
+    }
+
+    if (room.status !== 'waiting') {
+      socket.emit('joinRoomError', { message: 'Room is full' });
+      console.log(`Failed join attempt: Room ${roomCode} is full`);
+      return;
+    }
+
+    if (room.host.id === socket.id) {
+      socket.emit('joinRoomError', { message: 'Cannot join your own room' });
+      return;
+    }
+
+    // Match found! Create a game
+    room.guest = socket;
+    room.status = 'playing';
+
+    const gameId = `game_${Date.now()}`;
+    const player1 = room.host;
+    const player2 = socket;
+
+    // Randomly assign teams
+    const player1Team = Math.random() < 0.5 ? 'player' : 'enemy';
+    const player2Team = player1Team === 'player' ? 'enemy' : 'player';
+
+    // Create game session
+    const game = {
+      id: gameId,
+      player1: {
+        socket: player1,
+        team: player1Team,
+        id: player1.id
+      },
+      player2: {
+        socket: player2,
+        team: player2Team,
+        id: player2.id
+      },
+      currentTurn: 'player',
+      gameState: null,
+      roomCode: roomCode
+    };
+
+    activeGames.set(gameId, game);
+
+    // Join both players to the game room
+    player1.join(gameId);
+    player2.join(gameId);
+
+    // Store gameId in socket for later reference
+    player1.gameId = gameId;
+    player2.gameId = gameId;
+
+    // Notify both players
+    player1.emit('gameMatched', {
+      gameId: gameId,
+      yourTeam: player1Team,
+      opponentId: player2.id,
+      startsFirst: player1Team === 'player'
+    });
+
+    player2.emit('gameMatched', {
+      gameId: gameId,
+      yourTeam: player2Team,
+      opponentId: player1.id,
+      startsFirst: player2Team === 'player'
+    });
+
+    console.log(`Room ${roomCode} game started: ${player1.id} (${player1Team}) vs ${player2.id} (${player2Team})`);
+  });
+
+  // Handle cancel room
+  socket.on('cancelRoom', () => {
+    const roomCode = socket.roomCode;
+    if (roomCode && rooms.has(roomCode)) {
+      rooms.delete(roomCode);
+      delete socket.roomCode;
+      console.log(`Room ${roomCode} cancelled by ${socket.id}`);
+    }
+  });
+
   // Handle disconnection
   socket.on('disconnect', () => {
     console.log('Player disconnected:', socket.id);
@@ -164,6 +284,16 @@ io.on('connection', (socket) => {
       waitingPlayer = null;
     }
 
+    // Remove from rooms if present
+    const roomCode = socket.roomCode;
+    if (roomCode && rooms.has(roomCode)) {
+      const room = rooms.get(roomCode);
+      if (room.status === 'waiting') {
+        rooms.delete(roomCode);
+        console.log(`Room ${roomCode} deleted due to disconnection`);
+      }
+    }
+
     // Handle active game disconnection
     const gameId = socket.gameId;
     if (gameId) {
@@ -171,6 +301,12 @@ io.on('connection', (socket) => {
       if (game) {
         // Notify opponent that player disconnected
         socket.to(gameId).emit('opponentDisconnected');
+
+        // Clean up room if it exists
+        if (game.roomCode && rooms.has(game.roomCode)) {
+          rooms.delete(game.roomCode);
+        }
+
         activeGames.delete(gameId);
         console.log(`Game ${gameId} ended due to disconnection`);
       }

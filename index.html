@@ -16,9 +16,49 @@
         <div id="start-screen">
             <div class="start-content">
                 <img src="logo.png" alt="Animal Wars" class="start-logo">
-                <button id="start-game-btn" class="control-btn start-btn">Start Game</button>
+                <button id="single-player-btn" class="control-btn start-btn">Single Player</button>
+                <button id="multiplayer-btn" class="control-btn start-btn">Multiplayer</button>
             </div>
             <div id="marching-units"></div>
+        </div>
+
+        <!-- Multiplayer Menu -->
+        <div id="multiplayer-menu" class="hidden">
+            <div class="menu-content">
+                <img src="logo.png" alt="Animal Wars" class="menu-logo">
+                <h2>Multiplayer</h2>
+                <div class="menu-buttons">
+                    <button id="random-match-btn" class="control-btn menu-btn">Random Match</button>
+                    <button id="create-room-btn" class="control-btn menu-btn">Create Room</button>
+                    <button id="join-room-btn" class="control-btn menu-btn">Join Room</button>
+                    <button id="back-to-start-btn" class="control-btn menu-btn">Back</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Room Display (after creating) -->
+        <div id="room-display" class="hidden">
+            <div class="room-content">
+                <h2>Room Created!</h2>
+                <p>Share this code with your friend:</p>
+                <div class="room-code-display" id="room-code-text">ABCD</div>
+                <p class="room-status">Waiting for opponent...</p>
+                <button id="cancel-room-btn" class="control-btn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Join Room Input -->
+        <div id="join-room-input" class="hidden">
+            <div class="join-content">
+                <h2>Join Room</h2>
+                <p>Enter room code:</p>
+                <input type="text" id="room-code-input" class="room-code-field" maxlength="6" placeholder="ABCD12">
+                <div class="join-buttons">
+                    <button id="confirm-join-btn" class="control-btn">Join</button>
+                    <button id="cancel-join-btn" class="control-btn">Cancel</button>
+                </div>
+                <p id="join-error" class="error-message hidden">Invalid room code</p>
+            </div>
         </div>
 
         <header>
@@ -34,7 +74,6 @@
                 </div>
             </div>
             <button id="end-turn-btn" class="control-btn">End Turn</button>
-            <button id="multiplayer-btn" class="control-btn">Multiplayer</button>
         </div>
 
         <!-- Battle Cutscene Overlay -->
