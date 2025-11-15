@@ -189,11 +189,25 @@ class Game {
         // Sound manager
         this.soundManager = new SoundManager();
 
+        this.preloadUnitImages();
         this.initGame();
         this.setupEventListeners();
         this.initializeCutscene();
         this.initializeSocket();
         this.render();
+    }
+
+    preloadUnitImages() {
+        // Preload all unit images to prevent flickering on re-renders
+        const unitTypes = ['infantry', 'tank', 'chopper'];
+        const teams = ['player', 'enemy'];
+
+        unitTypes.forEach(type => {
+            teams.forEach(team => {
+                const img = new Image();
+                img.src = this.getUnitImagePath(type, team);
+            });
+        });
     }
 
     initializeCutscene() {
@@ -352,7 +366,6 @@ class Game {
                     iconImg.className = 'unit-icon';
                     iconImg.src = this.getUnitImagePath(unit.type, unit.team);
                     iconImg.alt = `${unit.team} ${unit.type}`;
-                    iconImg.decoding = 'async';
                     unitDiv.appendChild(iconImg);
 
                     // Add the unit number display
