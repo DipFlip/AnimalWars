@@ -9,38 +9,53 @@ class SoundManager {
         // Check if sound effects are enabled
         this.enabled = localStorage.getItem('soundEffectsEnabled') !== 'false';
 
-        this.sounds = {
+        // Create pools of pre-loaded audio instances for instant playback
+        this.soundPools = {};
+        const soundFiles = {
             // Unit sounds
-            infantry: new Audio('sounds/Unit_sound_infantry.wav'),
-            tank: new Audio('sounds/Unit_sound_tank.wav'),
-            chopper: new Audio('sounds/Unit_sound_chopper.wav'),
+            infantry: 'sounds/Unit_sound_infantry.wav',
+            tank: 'sounds/Unit_sound_tank.wav',
+            chopper: 'sounds/Unit_sound_chopper.wav',
 
             // Action sounds
-            move: new Audio('sounds/Unit_move.wav'),
-            battle: new Audio('sounds/Battle_sounds.wav'),
-            dies: new Audio('sounds/Unit_dies.wav'),
+            move: 'sounds/Unit_move.wav',
+            battle: 'sounds/Battle_sounds.wav',
+            dies: 'sounds/Unit_dies.wav',
 
             // Game sounds
-            turnStart: new Audio('sounds/Player_turn_start.wav'),
-            victory: new Audio('sounds/Battle_won2.wav')
+            turnStart: 'sounds/Player_turn_start.wav',
+            victory: 'sounds/Battle_won2.wav'
         };
 
-        // Preload and configure all sounds
-        Object.values(this.sounds).forEach(sound => {
-            sound.volume = 0.5;
-            sound.preload = 'auto'; // Preload audio
-            sound.load(); // Force immediate load
+        // Create a pool of 3 audio instances per sound for instant playback
+        Object.entries(soundFiles).forEach(([name, path]) => {
+            this.soundPools[name] = [];
+            for (let i = 0; i < 3; i++) {
+                const audio = new Audio(path);
+                audio.volume = 0.5;
+                audio.preload = 'auto';
+                audio.load();
+                this.soundPools[name].push(audio);
+            }
         });
     }
 
     play(soundName) {
         if (!this.enabled) return;
 
-        if (this.sounds[soundName]) {
-            // Clone the audio to allow overlapping sounds
-            const sound = this.sounds[soundName].cloneNode();
-            sound.volume = this.sounds[soundName].volume;
-            sound.play().catch(err => {
+        if (this.soundPools[soundName]) {
+            // Find the first available audio instance (not playing)
+            const pool = this.soundPools[soundName];
+            let audio = pool.find(a => a.paused || a.ended);
+
+            // If all are playing, use the first one anyway (it will restart)
+            if (!audio) {
+                audio = pool[0];
+            }
+
+            // Reset to start and play
+            audio.currentTime = 0;
+            audio.play().catch(err => {
                 console.log('Sound playback failed:', err);
             });
         }
