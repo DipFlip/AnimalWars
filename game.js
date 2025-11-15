@@ -3,6 +3,47 @@
 // Leave empty for local development (defaults to same origin)
 const MULTIPLAYER_SERVER_URL = 'https://animalwars-production.up.railway.app';
 
+// Sound Manager Class
+class SoundManager {
+    constructor() {
+        this.sounds = {
+            // Unit sounds
+            infantry: new Audio('sounds/Unit_sound_infantry.wav'),
+            tank: new Audio('sounds/Unit_sound_tank.wav'),
+            chopper: new Audio('sounds/Unit_sound_chopper.wav'),
+
+            // Action sounds
+            move: new Audio('sounds/Unit_move.wav'),
+            battle: new Audio('sounds/Battle_sounds.wav'),
+            dies: new Audio('sounds/Unit_dies.wav'),
+
+            // Game sounds
+            turnStart: new Audio('sounds/Player_turn_start.wav'),
+            victory: new Audio('sounds/Battle_won2.wav')
+        };
+
+        // Set volume levels
+        Object.values(this.sounds).forEach(sound => {
+            sound.volume = 0.5;
+        });
+    }
+
+    play(soundName) {
+        if (this.sounds[soundName]) {
+            // Clone the audio to allow overlapping sounds
+            const sound = this.sounds[soundName].cloneNode();
+            sound.volume = this.sounds[soundName].volume;
+            sound.play().catch(err => {
+                console.log('Sound playback failed:', err);
+            });
+        }
+    }
+
+    playUnitSound(unitType) {
+        this.play(unitType);
+    }
+}
+
 // Unit Class
 class Unit {
     constructor(type, team, x, y) {
@@ -117,6 +158,9 @@ class Game {
         this.socket = null;
         this.gameId = null;
         this.opponentId = null;
+
+        // Sound manager
+        this.soundManager = new SoundManager();
 
         this.initGame();
         this.setupEventListeners();
@@ -426,6 +470,9 @@ class Game {
     selectUnit(unit) {
         this.selectedUnit = unit;
 
+        // Play unit selection sound
+        this.soundManager.playUnitSound(unit.type);
+
         // If unit has already moved, show attack range directly (if not already attacked)
         if (unit.hasMoved) {
             this.showingAttackRange = true;
@@ -563,6 +610,9 @@ class Game {
         unit.y = toY;
         unit.hasMoved = true;
 
+        // Play move sound
+        this.soundManager.play('move');
+
         // Render immediately to update DOM with new position
         this.render();
 
@@ -660,6 +710,9 @@ class Game {
             });
         }
 
+        // Play battle sound
+        this.soundManager.play('battle');
+
         // Show pre-battle animation on map
         await this.showPreBattleAnimation(attacker, defender);
 
@@ -745,6 +798,9 @@ class Game {
         return new Promise((resolve) => {
             // Re-render to show current state
             this.render();
+
+            // Play death sound
+            this.soundManager.play('dies');
 
             // Find the tile and unit element
             const tile = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
@@ -1236,6 +1292,10 @@ class Game {
         // End AI turn
         this.units.filter(u => u.team === 'enemy').forEach(u => u.reset());
         this.currentTurn = 'player';
+
+        // Play turn start sound for player's turn
+        this.soundManager.play('turnStart');
+
         this.render();
     }
 
@@ -1262,6 +1322,9 @@ class Game {
         const message = document.getElementById('game-over-message');
 
         if (playerWon) {
+            // Play victory sound
+            this.soundManager.play('victory');
+
             title.textContent = 'Victory!';
             if (hqCaptured) {
                 message.textContent = 'You have captured the enemy headquarters!';
@@ -1543,6 +1606,9 @@ class Game {
         newUnit.hasAttacked = true;
         this.units.push(newUnit);
 
+        // Play unit purchase sound
+        this.soundManager.playUnitSound(unitType);
+
         // Emit production event in multiplayer
         if (this.isMultiplayer && this.socket) {
             this.socket.emit('produceUnit', {
@@ -1661,6 +1727,12 @@ class Game {
         this.socket.on('turnChanged', (newTurn) => {
             console.log('Turn changed to:', newTurn);
             this.currentTurn = newTurn;
+
+            // Play turn start sound when it's our turn
+            if (this.isMyTurn()) {
+                this.soundManager.play('turnStart');
+            }
+
             this.updateUI();
         });
 
