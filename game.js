@@ -3,6 +3,74 @@
 // Leave empty for local development (defaults to same origin)
 const MULTIPLAYER_SERVER_URL = 'https://animalwars-production.up.railway.app';
 
+// Sound Manager Class
+class SoundManager {
+    constructor() {
+        // Check if sound effects are enabled
+        this.enabled = localStorage.getItem('soundEffectsEnabled') !== 'false';
+
+        // Create pools of pre-loaded audio instances for instant playback
+        this.soundPools = {};
+        const soundFiles = {
+            // Unit sounds
+            infantry: 'sounds/Unit_sound_infantry.wav',
+            tank: 'sounds/Unit_sound_tank.wav',
+            chopper: 'sounds/Unit_sound_chopper.wav',
+
+            // Action sounds
+            move: 'sounds/Unit_move.wav',
+            battle: 'sounds/Battle_sounds.wav',
+            dies: 'sounds/Unit_dies.wav',
+
+            // Game sounds
+            turnStart: 'sounds/Player_turn_start.wav',
+            victory: 'sounds/Battle_won2.wav'
+        };
+
+        // Create a pool of 3 audio instances per sound for instant playback
+        Object.entries(soundFiles).forEach(([name, path]) => {
+            this.soundPools[name] = [];
+            for (let i = 0; i < 3; i++) {
+                const audio = new Audio(path);
+                audio.volume = 0.5;
+                audio.preload = 'auto';
+                audio.load();
+                this.soundPools[name].push(audio);
+            }
+        });
+    }
+
+    play(soundName) {
+        if (!this.enabled) return;
+
+        if (this.soundPools[soundName]) {
+            // Find the first available audio instance (not playing)
+            const pool = this.soundPools[soundName];
+            let audio = pool.find(a => a.paused || a.ended);
+
+            // If all are playing, use the first one anyway (it will restart)
+            if (!audio) {
+                audio = pool[0];
+            }
+
+            // Reset to start and play
+            audio.currentTime = 0;
+            audio.play().catch(err => {
+                console.log('Sound playback failed:', err);
+            });
+        }
+    }
+
+    playUnitSound(unitType) {
+        this.play(unitType);
+    }
+
+    setEnabled(enabled) {
+        this.enabled = enabled;
+        localStorage.setItem('soundEffectsEnabled', enabled);
+    }
+}
+
 // Unit Class
 class Unit {
     constructor(type, team, x, y) {
@@ -117,6 +185,9 @@ class Game {
         this.socket = null;
         this.gameId = null;
         this.opponentId = null;
+
+        // Sound manager
+        this.soundManager = new SoundManager();
 
         this.initGame();
         this.setupEventListeners();
@@ -426,6 +497,9 @@ class Game {
     selectUnit(unit) {
         this.selectedUnit = unit;
 
+        // Play unit selection sound
+        this.soundManager.playUnitSound(unit.type);
+
         // If unit has already moved, show attack range directly (if not already attacked)
         if (unit.hasMoved) {
             this.showingAttackRange = true;
@@ -562,6 +636,9 @@ class Game {
         unit.x = toX;
         unit.y = toY;
         unit.hasMoved = true;
+
+        // Play move sound
+        this.soundManager.play('move');
 
         // Render immediately to update DOM with new position
         this.render();
@@ -932,6 +1009,9 @@ class Game {
 
             cutscene.classList.remove('hidden');
 
+            // Play battle sound when cutscene starts
+            this.soundManager.play('battle');
+
             // SIMULTANEOUS: Show targets and fire on both sides at the same time
             setTimeout(() => {
                 // Show initial attack targets
@@ -987,6 +1067,11 @@ class Game {
                 // After targets appear, make soldiers disappear with fire on BOTH sides simultaneously
                 const maxTargets = Math.max(initialTargets, defenderWillSurvive ? (attacker.team === 'player' ? playerCounterTargets : enemyCounterTargets) : 0);
                 setTimeout(() => {
+                    // Play death sound if any soldiers will die
+                    if (playerSoldiersLost > 0 || enemySoldiersLost > 0) {
+                        this.soundManager.play('dies');
+                    }
+
                     // Player side fire
                     for (let i = 0; i < playerSoldiersLost && i < playerSoldiers.length; i++) {
                         const soldierToRemove = playerSoldiers[playerSoldiers.length - 1 - i];
@@ -1236,6 +1321,10 @@ class Game {
         // End AI turn
         this.units.filter(u => u.team === 'enemy').forEach(u => u.reset());
         this.currentTurn = 'player';
+
+        // Play turn start sound for player's turn
+        this.soundManager.play('turnStart');
+
         this.render();
     }
 
@@ -1262,6 +1351,9 @@ class Game {
         const message = document.getElementById('game-over-message');
 
         if (playerWon) {
+            // Play victory sound
+            this.soundManager.play('victory');
+
             title.textContent = 'Victory!';
             if (hqCaptured) {
                 message.textContent = 'You have captured the enemy headquarters!';
@@ -1543,6 +1635,9 @@ class Game {
         newUnit.hasAttacked = true;
         this.units.push(newUnit);
 
+        // Play unit purchase sound
+        this.soundManager.playUnitSound(unitType);
+
         // Emit production event in multiplayer
         if (this.isMultiplayer && this.socket) {
             this.socket.emit('produceUnit', {
@@ -1661,6 +1756,12 @@ class Game {
         this.socket.on('turnChanged', (newTurn) => {
             console.log('Turn changed to:', newTurn);
             this.currentTurn = newTurn;
+
+            // Play turn start sound when it's our turn
+            if (this.isMyTurn()) {
+                this.soundManager.play('turnStart');
+            }
+
             this.updateUI();
         });
 
@@ -1882,12 +1983,44 @@ window.addEventListener('DOMContentLoaded', () => {
     const roomDisplay = document.getElementById('room-display');
     const joinRoomInput = document.getElementById('join-room-input');
     const backgroundMusic = document.getElementById('background-music');
+    const musicToggle = document.getElementById('music-toggle');
+    const soundToggle = document.getElementById('sound-toggle');
+
+    // Load saved preferences
+    const musicEnabled = localStorage.getItem('musicEnabled') !== 'false';
+    const soundEnabled = localStorage.getItem('soundEffectsEnabled') !== 'false';
+    musicToggle.checked = musicEnabled;
+    soundToggle.checked = soundEnabled;
+
+    // Handle music toggle
+    musicToggle.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        localStorage.setItem('musicEnabled', enabled);
+        if (enabled) {
+            backgroundMusic.play().catch(err => {
+                console.log('Audio playback failed:', err);
+            });
+        } else {
+            backgroundMusic.pause();
+        }
+    });
+
+    // Handle sound effects toggle
+    soundToggle.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        localStorage.setItem('soundEffectsEnabled', enabled);
+        if (game && game.soundManager) {
+            game.soundManager.setEnabled(enabled);
+        }
+    });
 
     // Play music and hide start screen helper
     function startGame() {
-        backgroundMusic.play().catch(err => {
-            console.log('Audio playback failed:', err);
-        });
+        if (musicToggle.checked) {
+            backgroundMusic.play().catch(err => {
+                console.log('Audio playback failed:', err);
+            });
+        }
         startScreen.classList.add('hidden');
         document.getElementById('game-view').classList.remove('hidden');
     }

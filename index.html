@@ -18,6 +18,16 @@
                 <img src="logo.png" alt="Animal Wars" class="start-logo">
                 <button id="single-player-btn" class="control-btn start-btn">Single Player</button>
                 <button id="multiplayer-btn" class="control-btn start-btn">Multiplayer</button>
+                <div class="audio-controls">
+                    <label class="audio-toggle">
+                        <input type="checkbox" id="music-toggle" checked>
+                        <span>Music</span>
+                    </label>
+                    <label class="audio-toggle">
+                        <input type="checkbox" id="sound-toggle" checked>
+                        <span>Sound Effects</span>
+                    </label>
+                </div>
             </div>
             <div id="marching-units"></div>
         </div>
@@ -164,7 +174,7 @@
 
     <!-- Background Music -->
     <audio id="background-music" loop>
-        <source src="welcome-to-the-jungle.mp3" type="audio/mpeg">
+        <source src="sounds/welcome-to-the-jungle.mp3" type="audio/mpeg">
     </audio>
 
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
