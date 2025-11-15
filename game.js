@@ -710,9 +710,6 @@ class Game {
             });
         }
 
-        // Play battle sound
-        this.soundManager.play('battle');
-
         // Show pre-battle animation on map
         await this.showPreBattleAnimation(attacker, defender);
 
@@ -798,9 +795,6 @@ class Game {
         return new Promise((resolve) => {
             // Re-render to show current state
             this.render();
-
-            // Play death sound
-            this.soundManager.play('dies');
 
             // Find the tile and unit element
             const tile = document.querySelector(`[data-x="${x}"][data-y="${y}"]`);
@@ -988,6 +982,9 @@ class Game {
 
             cutscene.classList.remove('hidden');
 
+            // Play battle sound when cutscene starts
+            this.soundManager.play('battle');
+
             // SIMULTANEOUS: Show targets and fire on both sides at the same time
             setTimeout(() => {
                 // Show initial attack targets
@@ -1043,6 +1040,11 @@ class Game {
                 // After targets appear, make soldiers disappear with fire on BOTH sides simultaneously
                 const maxTargets = Math.max(initialTargets, defenderWillSurvive ? (attacker.team === 'player' ? playerCounterTargets : enemyCounterTargets) : 0);
                 setTimeout(() => {
+                    // Play death sound if any soldiers will die
+                    if (playerSoldiersLost > 0 || enemySoldiersLost > 0) {
+                        this.soundManager.play('dies');
+                    }
+
                     // Player side fire
                     for (let i = 0; i < playerSoldiersLost && i < playerSoldiers.length; i++) {
                         const soldierToRemove = playerSoldiers[playerSoldiers.length - 1 - i];
