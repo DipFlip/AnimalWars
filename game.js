@@ -6,6 +6,9 @@ const MULTIPLAYER_SERVER_URL = 'https://animalwars-production.up.railway.app';
 // Sound Manager Class
 class SoundManager {
     constructor() {
+        // Check if sound effects are enabled
+        this.enabled = localStorage.getItem('soundEffectsEnabled') !== 'false';
+
         this.sounds = {
             // Unit sounds
             infantry: new Audio('sounds/Unit_sound_infantry.wav'),
@@ -22,13 +25,17 @@ class SoundManager {
             victory: new Audio('sounds/Battle_won2.wav')
         };
 
-        // Set volume levels
+        // Preload and configure all sounds
         Object.values(this.sounds).forEach(sound => {
             sound.volume = 0.5;
+            sound.preload = 'auto'; // Preload audio
+            sound.load(); // Force immediate load
         });
     }
 
     play(soundName) {
+        if (!this.enabled) return;
+
         if (this.sounds[soundName]) {
             // Clone the audio to allow overlapping sounds
             const sound = this.sounds[soundName].cloneNode();
@@ -41,6 +48,11 @@ class SoundManager {
 
     playUnitSound(unitType) {
         this.play(unitType);
+    }
+
+    setEnabled(enabled) {
+        this.enabled = enabled;
+        localStorage.setItem('soundEffectsEnabled', enabled);
     }
 }
 
@@ -1956,12 +1968,44 @@ window.addEventListener('DOMContentLoaded', () => {
     const roomDisplay = document.getElementById('room-display');
     const joinRoomInput = document.getElementById('join-room-input');
     const backgroundMusic = document.getElementById('background-music');
+    const musicToggle = document.getElementById('music-toggle');
+    const soundToggle = document.getElementById('sound-toggle');
+
+    // Load saved preferences
+    const musicEnabled = localStorage.getItem('musicEnabled') !== 'false';
+    const soundEnabled = localStorage.getItem('soundEffectsEnabled') !== 'false';
+    musicToggle.checked = musicEnabled;
+    soundToggle.checked = soundEnabled;
+
+    // Handle music toggle
+    musicToggle.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        localStorage.setItem('musicEnabled', enabled);
+        if (enabled) {
+            backgroundMusic.play().catch(err => {
+                console.log('Audio playback failed:', err);
+            });
+        } else {
+            backgroundMusic.pause();
+        }
+    });
+
+    // Handle sound effects toggle
+    soundToggle.addEventListener('change', (e) => {
+        const enabled = e.target.checked;
+        localStorage.setItem('soundEffectsEnabled', enabled);
+        if (game && game.soundManager) {
+            game.soundManager.setEnabled(enabled);
+        }
+    });
 
     // Play music and hide start screen helper
     function startGame() {
-        backgroundMusic.play().catch(err => {
-            console.log('Audio playback failed:', err);
-        });
+        if (musicToggle.checked) {
+            backgroundMusic.play().catch(err => {
+                console.log('Audio playback failed:', err);
+            });
+        }
         startScreen.classList.add('hidden');
         document.getElementById('game-view').classList.remove('hidden');
     }

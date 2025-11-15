@@ -947,6 +947,34 @@ h1 {
     50% { transform: scale(1.05); }
 }
 
+/* Audio Controls */
+.audio-controls {
+    display: flex;
+    gap: 30px;
+    margin-top: 20px;
+}
+
+.audio-toggle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+    font-size: 1.2rem;
+    color: #2c1810;
+    user-select: none;
+}
+
+.audio-toggle input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    accent-color: #8b4513;
+}
+
+.audio-toggle span {
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5);
+}
+
 /* Marching Units */
 #marching-units {
     position: absolute;
