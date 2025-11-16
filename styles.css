@@ -599,6 +599,56 @@ h1 {
 }
 
 /* Game Over Screen */
+/* Turn Change Animation */
+#turn-change {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 999;
+    pointer-events: none;
+}
+
+#turn-change.hidden {
+    display: none;
+}
+
+.turn-change-text {
+    font-size: 5rem;
+    font-weight: 700;
+    color: white;
+    text-shadow:
+        3px 3px 0 #000,
+        -3px -3px 0 #000,
+        3px -3px 0 #000,
+        -3px 3px 0 #000,
+        0 0 20px rgba(0, 0, 0, 0.8);
+    animation: turnChangeAnim 1.5s ease-in-out;
+}
+
+@keyframes turnChangeAnim {
+    0% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+    20% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+    80% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+}
+
 #game-over {
     position: fixed;
     top: 0;

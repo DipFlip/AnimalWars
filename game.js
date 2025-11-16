@@ -1022,8 +1022,10 @@ class Game {
 
             cutscene.classList.remove('hidden');
 
-            // Play battle sound when cutscene starts
-            this.soundManager.play('battle');
+            // Play battle sound with a slight delay
+            setTimeout(() => {
+                this.soundManager.play('battle');
+            }, 400);
 
             // SIMULTANEOUS: Show targets and fire on both sides at the same time
             setTimeout(() => {
@@ -1153,6 +1155,9 @@ class Game {
                 this.currentTurn = 'enemy';
                 this.cancelSelection();
                 this.render();
+
+                // Show turn change animation
+                this.showTurnChange('Enemy Turn');
 
                 // AI turn
                 setTimeout(() => this.aiTurn(), 1000);
@@ -1335,6 +1340,9 @@ class Game {
         this.units.filter(u => u.team === 'enemy').forEach(u => u.reset());
         this.currentTurn = 'player';
 
+        // Show turn change animation
+        this.showTurnChange('Player Turn');
+
         // Play turn start sound for player's turn
         this.soundManager.play('turnStart');
 
@@ -1388,6 +1396,19 @@ class Game {
         }
 
         gameOverDiv.classList.remove('hidden');
+    }
+
+    showTurnChange(turnText) {
+        const turnChangeDiv = document.getElementById('turn-change');
+        const turnChangeText = turnChangeDiv.querySelector('.turn-change-text');
+
+        turnChangeText.textContent = turnText;
+        turnChangeDiv.classList.remove('hidden');
+
+        // Hide after animation completes (1.5s)
+        setTimeout(() => {
+            turnChangeDiv.classList.add('hidden');
+        }, 1500);
     }
 
     restart() {
@@ -1769,6 +1790,10 @@ class Game {
         this.socket.on('turnChanged', (newTurn) => {
             console.log('Turn changed to:', newTurn);
             this.currentTurn = newTurn;
+
+            // Show turn change animation
+            const turnText = this.isMyTurn() ? 'Your Turn' : 'Opponent Turn';
+            this.showTurnChange(turnText);
 
             // Play turn start sound when it's our turn
             if (this.isMyTurn()) {
